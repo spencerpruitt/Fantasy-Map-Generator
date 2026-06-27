@@ -235,7 +235,7 @@ redraw and selection clear.
   re-groups it. Cosmetic only — flag for Slice 10.
 
 ### Slice 2 — Shared edits on States: Lock / Unlock / Set color  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 1
 - User stories: 14–19
 
@@ -245,10 +245,18 @@ applies the chosen color to all selected states, then triggers one redraw. Selec
 after the action.
 
 **Acceptance criteria:**
-- [ ] Bulk Lock locks every selected row; bulk Unlock unlocks every selected row
-- [ ] A row locked via bulk Lock then resists bulk delete
-- [ ] Set color applies the chosen color to all selected states and redraws
-- [ ] Lock/Unlock/Set color are exposed as distinct actions (no single toggle)
+- [x] Bulk Lock locks every selected row; bulk Unlock unlocks every selected row
+- [x] A row locked via bulk Lock then resists bulk delete
+- [x] Set color applies the chosen color to all selected states and redraws
+- [x] Lock/Unlock/Set color are exposed as distinct actions (no single toggle)
+
+**Implementation notes:**
+- Bar shows Lock/Unlock when the adapter has `setLock`, and "Set color" when
+  `supportsColor && setColor`. Set color reuses the global `openPicker`. Each action
+  applies to the whole selection, then redraws once and clears the selection.
+- States adapter gained `setLock`/`setColor` (pure pack mutations); unit-tested
+  including the lock-then-resist-delete path. Army/region recolor fidelity is handled
+  by the redraw — HITL to confirm at Slice 10.
 
 ### Slice 3 — Optional "also delete contained burgs"  [AFK]
 - Status: todo

@@ -33,6 +33,17 @@ export class BulkActionBar {
       return;
     }
 
+    const canLock = typeof this.adapter.setLock === "function";
+    const canColor = this.adapter.supportsColor && typeof this.adapter.setColor === "function";
+    const lockButtons = canLock
+      ? /* html */ `
+        <button type="button" class="bulkLock" data-tip="Lock selected rows (protects from regeneration and bulk delete)">Lock</button>
+        <button type="button" class="bulkUnlock" data-tip="Unlock selected rows">Unlock</button>`
+      : "";
+    const colorButton = canColor
+      ? /* html */ `<button type="button" class="bulkColor" data-tip="Set color of selected rows">Set color</button>`
+      : "";
+
     const bar = document.createElement("div");
     bar.className = "bulkActionBar";
     bar.innerHTML = /* html */ `
@@ -42,6 +53,8 @@ export class BulkActionBar {
       <span class="bulkActions" style="display: none">
         <span class="bulkCount">0 selected</span>
         <button type="button" class="bulkDelete" data-tip="Delete selected rows">Delete</button>
+        ${lockButtons}
+        ${colorButton}
       </span>`;
     this.container.insertAdjacentElement("afterend", bar);
 
@@ -52,6 +65,9 @@ export class BulkActionBar {
 
     this.selectAllCheckbox?.addEventListener("change", () => this.onToggleSelectAll());
     bar.querySelector(".bulkDelete")?.addEventListener("click", () => this.onDelete());
+    bar.querySelector(".bulkLock")?.addEventListener("click", () => this.onSetLock(true));
+    bar.querySelector(".bulkUnlock")?.addEventListener("click", () => this.onSetLock(false));
+    bar.querySelector(".bulkColor")?.addEventListener("click", () => this.onSetColor());
 
     // delegate per-row checkbox changes from the container
     this.container.addEventListener("change", event => {
@@ -115,6 +131,30 @@ export class BulkActionBar {
         this.adapter.redraw(); // single redraw + list refresh (which re-syncs the bar)
         this.sync();
       }
+    });
+  }
+
+  private onSetLock(locked: boolean): void {
+    if (!this.adapter.setLock) return;
+    this.selection.getSelected().forEach(id => {
+      this.adapter.setLock?.(id, locked);
+    });
+    this.selection.clear();
+    this.adapter.redraw();
+    this.sync();
+  }
+
+  private onSetColor(): void {
+    if (!this.adapter.setColor) return;
+    const ids = this.selection.getSelected();
+    if (!ids.length) return;
+    openPicker("#ffffff", chosenColor => {
+      ids.forEach(id => {
+        this.adapter.setColor?.(id, chosenColor);
+      });
+      this.selection.clear();
+      this.adapter.redraw();
+      this.sync();
     });
   }
 

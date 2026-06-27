@@ -40,6 +40,12 @@ export function createStatesAdapter(redraw: () => void): BulkEntityAdapter {
     },
     isDeletable: isStateDeletable,
     isLocked: isStateLocked,
+    setLock: (id, locked) => {
+      if (pack.states[id]) pack.states[id].lock = locked;
+    },
+    setColor: (id, color) => {
+      if (pack.states[id]) pack.states[id].color = color;
+    },
     deleteEntity: id => removeStateCascade(id),
     describeCascade,
     redraw

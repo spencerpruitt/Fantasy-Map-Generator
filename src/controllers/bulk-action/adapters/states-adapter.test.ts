@@ -75,6 +75,26 @@ describe("statesAdapter", () => {
     expect(cells.state).toEqual([0, 0, 0, 0, 3, 0]);
   });
 
+  it("setLock locks and unlocks a state", () => {
+    adapter.setLock?.(1, true);
+    expect((globalThis as any).pack.states[1].lock).toBe(true);
+    expect(adapter.isLocked(1)).toBe(true);
+    adapter.setLock?.(1, false);
+    expect((globalThis as any).pack.states[1].lock).toBe(false);
+  });
+
+  it("a state locked via setLock then resists bulk delete (counted as skipped)", () => {
+    adapter.setLock?.(1, true);
+    const summary = adapter.describeCascade([1, 2]);
+    expect(summary.deletable).toBe(1); // only state 2
+    expect(summary.skippedLocked).toBe(1); // state 1 now locked
+  });
+
+  it("setColor sets a state's color", () => {
+    adapter.setColor?.(2, "#abcdef");
+    expect((globalThis as any).pack.states[2].color).toBe("#abcdef");
+  });
+
   it("invokes the injected redraw", () => {
     let redrawn = 0;
     const a = createStatesAdapter(() => {
