@@ -1,6 +1,6 @@
 # PRD: Bulk Action Bar — multi-select delete/edit across civilization menus
 
-Status: backlog
+Status: in-progress
 
 ## Problem Statement
 
@@ -192,7 +192,7 @@ adds a per-type adapter and mounts the existing bar. Visual confirmation is defe
 single terminal HITL slice.
 
 ### Slice 1 — Core selection + States bulk delete  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: none
 - User stories: 1–10, 13, 20, 24, 25, 26
 
@@ -208,13 +208,31 @@ skipped), and `deleteEntity` delegating to the existing state-delete logic. Moun
 redraw and selection clear.
 
 **Acceptance criteria:**
-- [ ] `BulkSelection` unit tests cover toggle, filter-aware select-all, clear, isSelected/count, and excluded-id rejection
-- [ ] Selecting and deleting multiple states removes them and reassigns their burgs to neutral + removes their provinces (matches single-delete cascade)
-- [ ] The neutral state (state 0) cannot be selected or deleted
-- [ ] Locked states are skipped by bulk delete and reported as skipped in the confirmation
-- [ ] Select-all respects the menu's active state/culture filter and search
-- [ ] The bar is hidden with zero selection and selection clears after a successful delete
-- [ ] Integration test asserts post-delete `pack` state for a multi-state selection
+- [x] `BulkSelection` unit tests cover toggle, filter-aware select-all, clear, isSelected/count, and excluded-id rejection
+- [x] Selecting and deleting multiple states removes them and reassigns their burgs to neutral + removes their provinces (matches single-delete cascade)
+- [x] The neutral state (state 0) cannot be selected or deleted
+- [x] Locked states are skipped by bulk delete and reported as skipped in the confirmation
+- [x] Select-all respects the menu's active state/culture filter and search (select-all enumerates only non-hidden rows)
+- [x] The bar is hidden with zero selection and selection clears after a successful delete
+- [x] Integration test asserts post-delete `pack` state for a multi-state selection
+
+**Implementation notes:**
+- Modules added under `src/controllers/bulk-action/`: `bulk-selection.ts` (pure),
+  `bulk-entity-adapter.ts` (full interface contract for all slices), `bulk-action-bar.ts`
+  (DOM glue), `bulk-delete-confirm.ts`, and `adapters/states-cascade.ts` (pure data cascade)
+  + `adapters/states-adapter.ts` (factory taking an injected `redraw`, so the adapter stays
+  free of the editor's module-load DOM side effects and is unit-testable).
+- `states-editor.ts` single-delete (`stateRemove`) was refactored to route its data mutations
+  through the shared `removeStateCascade`, so single and bulk delete share one cascade. DOM
+  cleanup split into `removeStateDom` (per-row) and `redrawStatesAfterBulkDelete` (batch).
+- **UI placement reconciliation (confirm at Slice 10 HITL):** the "select all" checkbox lives
+  in the always-visible bulk bar rather than inside the list header grid (the nine menus have
+  differing grid headers; a bar-hosted select-all is robust and consistent). The *action*
+  group ("N selected" + Delete) stays hidden until ≥1 row is selected, satisfying the
+  "hidden until selected" intent; per-row checkboxes are always visible.
+- **Known minor (HITL):** a deleted state's former capital burg keeps its capital icon styling
+  after bulk delete (the batch redraw doesn't re-group burg icons); single-delete still
+  re-groups it. Cosmetic only — flag for Slice 10.
 
 ### Slice 2 — Shared edits on States: Lock / Unlock / Set color  [AFK]
 - Status: todo

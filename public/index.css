@@ -1410,6 +1410,41 @@ div.slider .ui-slider-handle {
   width: max-content;
 }
 
+.bulkActionBar {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  flex-wrap: wrap;
+  margin: 0.2em 0;
+  padding: 0.2em 0.3em;
+  font-size: 0.9em;
+}
+
+.bulkActionBar .bulkSelectAll {
+  cursor: pointer;
+  user-select: none;
+}
+
+.bulkActionBar .bulkActions {
+  align-items: center;
+  gap: 0.5em;
+}
+
+.bulkActionBar .bulkCount {
+  font-style: italic;
+  color: #666;
+}
+
+.bulkActionBar button {
+  cursor: pointer;
+}
+
+.bulkRowCheckbox {
+  cursor: pointer;
+  margin-right: 0.3em;
+  vertical-align: middle;
+}
+
 div.header {
   display: grid;
   width: 0;
