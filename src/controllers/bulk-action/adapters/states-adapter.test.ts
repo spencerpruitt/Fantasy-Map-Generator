@@ -11,13 +11,13 @@ function makeWorld() {
     ],
     burgs: [
       0,
-      { i: 1, state: 1, capital: 1 },
-      { i: 2, state: 1, capital: 0 },
-      { i: 3, state: 2, capital: 0 },
-      { i: 4, state: 3, capital: 0 }
+      { i: 1, state: 1, capital: 1, cell: 1 },
+      { i: 2, state: 1, capital: 0, cell: 2 },
+      { i: 3, state: 2, capital: 0, cell: 3 },
+      { i: 4, state: 3, capital: 0, cell: 4 }
     ],
     provinces: [0, { i: 1, state: 1 }, { i: 2, state: 2 }],
-    cells: { state: [0, 1, 1, 2, 3, 0], province: [0, 1, 1, 2, 0, 0] }
+    cells: { state: [0, 1, 1, 2, 3, 0], province: [0, 1, 1, 2, 0, 0], burg: [0, 1, 2, 3, 4, 0] }
   };
 }
 
@@ -73,6 +73,28 @@ describe("statesAdapter", () => {
     expect(provinces[1].removed).toBe(true);
     expect(provinces[2].removed).toBe(true);
     expect(cells.state).toEqual([0, 0, 0, 0, 3, 0]);
+  });
+
+  it("declares burgs as its child kind", () => {
+    expect(adapter.childKind).toBe("burgs");
+  });
+
+  it("describeCascade reflects the deleteChildren option", () => {
+    const reassign = adapter.describeCascade([1, 2]);
+    expect(reassign.lines.join(" ").includes("reassigned to neutral")).toBe(true);
+
+    const withChildren = adapter.describeCascade([1, 2], { deleteChildren: true });
+    const text = withChildren.lines.join(" ");
+    expect(text.includes("3 burgs")).toBe(true);
+    expect(text.includes("removed")).toBe(true);
+    expect(text.includes("reassigned to neutral")).toBe(false);
+  });
+
+  it("deleteEntity with deleteChildren removes contained burgs", () => {
+    adapter.deleteEntity(1, { deleteChildren: true });
+    const { burgs } = (globalThis as any).pack;
+    expect(burgs[1].removed).toBe(true);
+    expect(burgs[2].removed).toBe(true);
   });
 
   it("setLock locks and unlocks a state", () => {

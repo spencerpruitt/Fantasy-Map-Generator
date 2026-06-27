@@ -15,15 +15,16 @@ function makeWorld() {
     ],
     burgs: [
       0,
-      { i: 1, state: 1, capital: 1 },
-      { i: 2, state: 1, capital: 0 },
-      { i: 3, state: 2, capital: 0 },
-      { i: 4, state: 3, capital: 0 }
+      { i: 1, state: 1, capital: 1, cell: 1 },
+      { i: 2, state: 1, capital: 0, cell: 2 },
+      { i: 3, state: 2, capital: 0, cell: 3 },
+      { i: 4, state: 3, capital: 0, cell: 4 }
     ],
     provinces: [0, { i: 1, state: 1 }, { i: 2, state: 2 }],
     cells: {
       state: [0, 1, 1, 2, 3, 0],
-      province: [0, 1, 1, 2, 0, 0]
+      province: [0, 1, 1, 2, 0, 0],
+      burg: [0, 1, 2, 3, 4, 0]
     }
   };
 }
@@ -75,6 +76,16 @@ describe("removeStateCascade", () => {
     expect(provinces[2].removed).toBe(true);
     expect(cells.state).toEqual([0, 0, 0, 0, 3, 0]);
     expect(states[3].neighbors).toEqual([]); // both removed neighbors gone
+  });
+
+  it("with deleteChildren, removes the state's burgs instead of reassigning them to neutral", () => {
+    removeStateCascade(1, { deleteChildren: true });
+    const { burgs, cells } = (globalThis as any).pack;
+    expect(burgs[1].removed).toBe(true);
+    expect(burgs[2].removed).toBe(true);
+    expect(cells.burg).toEqual([0, 0, 0, 3, 4, 0]); // burgs 1 & 2 released from their cells
+    expect(burgs[3].state).toBe(2); // other state's burg untouched
+    expect(burgs[3].removed).toBeUndefined();
   });
 
   it("ignores the neutral state and already-removed states", () => {

@@ -781,6 +781,14 @@ function redrawStatesAfterBulkDelete(): void {
     document.getElementById(`provinceCOA${p.i}`)?.remove();
     emblems.select(`#provinceEmblems > use[data-i='${p.i}']`).remove();
   });
+  // child-delete may have removed contained burgs; clear their map artifacts
+  pack.burgs.forEach(burg => {
+    if (!burg.i || !burg.removed) return;
+    document.getElementById(`burgCOA${burg.i}`)?.remove();
+    emblems.select(`#burgEmblems > use[data-i='${burg.i}']`).remove();
+    removeBurgIcon(burg.i);
+    removeBurgLabel(burg.i);
+  });
   debug.selectAll(".highlight").remove();
   redrawStatesAfterDelete();
 }

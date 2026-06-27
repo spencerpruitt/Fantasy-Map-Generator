@@ -117,15 +117,15 @@ export class BulkActionBar {
 
   private onDelete(): void {
     const ids = this.selection.getSelected();
-    const summary = this.adapter.describeCascade(ids);
     bulkDeleteConfirm({
       typeLabel: this.adapter.type,
-      summary,
-      onConfirm: () => {
+      childKind: this.adapter.childKind,
+      describe: deleteChildren => this.adapter.describeCascade(ids, { deleteChildren }),
+      onConfirm: deleteChildren => {
         ids
           .filter(id => this.adapter.isDeletable(id) && !this.adapter.isLocked(id))
           .forEach(id => {
-            this.adapter.deleteEntity(id);
+            this.adapter.deleteEntity(id, { deleteChildren });
           });
         this.selection.clear();
         this.adapter.redraw(); // single redraw + list refresh (which re-syncs the bar)

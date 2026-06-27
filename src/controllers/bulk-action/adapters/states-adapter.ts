@@ -1,4 +1,4 @@
-import type { BulkEntityAdapter, CascadeSummary } from "../bulk-entity-adapter";
+import type { BulkDeleteOptions, BulkEntityAdapter, CascadeSummary } from "../bulk-entity-adapter";
 import { removeStateCascade } from "./states-cascade";
 
 const isStateDeletable = (id: number): boolean => id !== 0 && !!pack.states[id] && !pack.states[id].removed;
@@ -6,7 +6,7 @@ const isStateLocked = (id: number): boolean => !!pack.states[id]?.lock;
 
 const plural = (count: number, noun: string): string => `${count} ${noun}${count === 1 ? "" : "s"}`;
 
-function describeCascade(ids: number[]): CascadeSummary {
+function describeCascade(ids: number[], options: BulkDeleteOptions = {}): CascadeSummary {
   const deletableIds = ids.filter(id => isStateDeletable(id) && !isStateLocked(id));
   const skippedLocked = ids.filter(id => isStateDeletable(id) && isStateLocked(id)).length;
 
@@ -18,7 +18,13 @@ function describeCascade(ids: number[]): CascadeSummary {
   });
 
   const lines = [`${plural(deletableIds.length, "state")} will be removed`];
-  if (burgs) lines.push(`${plural(burgs, "burg")} will be reassigned to neutral`);
+  if (burgs) {
+    lines.push(
+      options.deleteChildren
+        ? `${plural(burgs, "burg")} will be removed`
+        : `${plural(burgs, "burg")} will be reassigned to neutral`
+    );
+  }
   if (provinces) lines.push(`${plural(provinces, "province")} will be removed`);
 
   return { lines, deletable: deletableIds.length, skippedLocked };
@@ -34,6 +40,7 @@ export function createStatesAdapter(redraw: () => void): BulkEntityAdapter {
     type: "states",
     containerId: "statesBodySection",
     supportsColor: true,
+    childKind: "burgs",
     getRowId: row => {
       const id = Number(row.dataset.id);
       return Number.isFinite(id) ? id : null;
@@ -46,7 +53,7 @@ export function createStatesAdapter(redraw: () => void): BulkEntityAdapter {
     setColor: (id, color) => {
       if (pack.states[id]) pack.states[id].color = color;
     },
-    deleteEntity: id => removeStateCascade(id),
+    deleteEntity: (id, options) => removeStateCascade(id, options),
     describeCascade,
     redraw
   };
