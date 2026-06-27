@@ -274,7 +274,7 @@ burgs are deleted instead of reassigned to neutral; the cascade summary reflects
 - [x] Unit test covers the adapter cascade summary for both options
 
 ### Slice 4 — Roll out to Burgs (legacy-JS attach milestone)  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 1
 - User stories: 21, 22
 
@@ -284,10 +284,20 @@ the bar on the legacy-JS Burgs list. Proves the shared component attaches to a
 workflow becomes header select-all → Delete.
 
 **Acceptance criteria:**
-- [ ] The bar mounts and re-syncs on the legacy-JS Burgs list across refreshes
-- [ ] Bulk delete on burgs removes the selected burgs (matches single-delete)
-- [ ] The old "Remove All" button is removed and "select all → Delete" reproduces it
-- [ ] Set color is not offered in the Burgs menu
+- [x] The bar mounts and re-syncs on the legacy-JS Burgs list across refreshes
+- [x] Bulk delete on burgs removes the selected burgs (matches single-delete)
+- [x] The old "Remove All" button is removed and "select all → Delete" reproduces it
+- [x] Set color is not offered in the Burgs menu
+
+**Implementation notes:**
+- Legacy bridge `legacy-bridge.ts` registers `window.bulkBars.{mount,sync}` (eager via
+  `src/controllers/index.ts`); documented in `docs/architecture/architecture.md` and tracked
+  for removal by `docs/prd/legacy-menu-ts-migration.md`. Burgs menu calls `mount` on open and
+  `sync` after each `burgsOverviewAddLines`.
+- Burgs adapter: delete delegates to the trusted global `Burgs.remove`; `isDeletable` excludes
+  the placeholder, capitals (single-delete forbids deleting a capital), and removed burgs. No
+  color, no children. Old "Remove All" button + `triggerAllBurgsRemove` removed; "Lock All"
+  kept. Select-all is filter-aware (operates on the currently-rendered, filtered rows).
 
 ### Slice 5 — Roll out to Provinces (+ child-delete)  [AFK]
 - Status: todo
