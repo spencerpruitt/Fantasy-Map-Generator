@@ -259,7 +259,7 @@ after the action.
   by the redraw — HITL to confirm at Slice 10.
 
 ### Slice 3 — Optional "also delete contained burgs"  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 1
 - User stories: 11, 12
 
@@ -268,10 +268,10 @@ checkbox and the adapter `deleteChildren(id)` path, wired for States. When check
 burgs are deleted instead of reassigned to neutral; the cascade summary reflects the choice.
 
 **Acceptance criteria:**
-- [ ] The child-delete checkbox appears only in menus whose adapter declares a `childKind` (States here)
-- [ ] With the option set, deleting states removes their contained burgs; without it, burgs go neutral
-- [ ] Cascade summary counts reflect whether child-delete is enabled
-- [ ] Unit test covers the adapter cascade summary for both options
+- [x] The child-delete checkbox appears only in menus whose adapter declares a `childKind` (States here)
+- [x] With the option set, deleting states removes their contained burgs; without it, burgs go neutral
+- [x] Cascade summary counts reflect whether child-delete is enabled (and update live as the checkbox toggles)
+- [x] Unit test covers the adapter cascade summary for both options
 
 ### Slice 4 — Roll out to Burgs (legacy-JS attach milestone)  [AFK]
 - Status: todo
@@ -304,7 +304,7 @@ are color-bearing.
 - [ ] Set color is offered for provinces
 
 ### Slice 6 — Roll out to Cultures + Religions  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 1, Slice 2
 - User stories: 17, 18, 21
 
@@ -312,9 +312,15 @@ are color-bearing.
 to none — no owned deletable children). Mount the bar on both menus.
 
 **Acceptance criteria:**
-- [ ] Bulk delete reassigns affected cells/entities exactly as single-delete does for each type
-- [ ] No child-delete checkbox appears (neither type owns deletable entities)
-- [ ] Set color is offered for both
+- [x] Bulk delete reassigns affected cells/entities exactly as single-delete does for each type
+- [x] No child-delete checkbox appears (neither type owns deletable entities)
+- [x] Set color is offered for both
+
+**Implementation notes:** Same pattern as States — pure `cultures-cascade`/`religions-cascade`
+extracted from each editor's single-delete (cultures reassign burgs + dominant-culture
+states to neutral + release cells + prune origins; religions release cells + prune
+origins), `create{Cultures,Religions}Adapter(redraw)` factories, editor mount/sync, batch
+redraw. `isDeletable` excludes id 0 (Wildlands / No religion). 40 new unit tests.
 
 ### Slice 7 — Roll out to Military / Regiments  [AFK]
 - Status: todo
