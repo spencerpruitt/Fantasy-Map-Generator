@@ -1,6 +1,6 @@
 # PRD: Save-Location Picker for Save to Machine
 
-Status: backlog
+Status: in-progress
 Branch: `feat/download-path-selector`
 
 ## Problem Statement
@@ -122,20 +122,20 @@ Modules to test:
 ## Vertical Slices
 
 ### Slice 1 — Save Target module  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: none
 - User stories: 1–6, 8–9, 11–12, 18
 
 **What to build:** The deep Save Target / file-writer module in isolation, with no UI dependency. `saveToFileSystem(mapData, suggestedName)` detects File System Access API support; on a supported browser with no held handle it opens the Save-Location Picker (suggested name pre-filled, `.map` type filter), writes the data, and stores the returned File Handle as the session Save Target; with a handle already held it overwrites in place without a dialog; on user cancel (AbortError) it makes no change; on an unsupported browser it performs the Downloads Fallback. It returns a discriminated outcome (`saved-new` | `overwritten` | `downloaded-fallback` | `cancelled`) plus the resolved filename, and throws on real errors. `clearSaveTarget()` forgets the held handle. Verified headless via unit tests that stub the browser globals.
 
 **Acceptance criteria:**
-- [ ] Supported browser, no target → picker called once, handle stored, returns `saved-new` with filename
-- [ ] Supported browser, target held → writes to handle without calling the picker, returns `overwritten`
-- [ ] User cancels picker → no write, no state change, returns `cancelled`
-- [ ] Unsupported browser → Downloads Fallback path used, returns `downloaded-fallback`
-- [ ] `clearSaveTarget()` forgets the target so the next save re-opens the picker
-- [ ] Real (non-cancel) failures propagate as thrown errors
-- [ ] Unit tests cover all of the above by stubbing browser globals
+- [x] Supported browser, no target → picker called once, handle stored, returns `saved-new` with filename
+- [x] Supported browser, target held → writes to handle without calling the picker, returns `overwritten`
+- [x] User cancels picker → no write, no state change, returns `cancelled`
+- [x] Unsupported browser → Downloads Fallback path used, returns `downloaded-fallback`
+- [x] `clearSaveTarget()` forgets the target so the next save re-opens the picker
+- [x] Real (non-cancel) failures propagate as thrown errors
+- [x] Unit tests cover all of the above by stubbing browser globals
 
 ### Slice 2 — Wire into Save to Machine  [AFK]
 - Status: todo
