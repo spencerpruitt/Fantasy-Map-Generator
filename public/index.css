@@ -1412,12 +1412,34 @@ div.slider .ui-slider-handle {
 
 .bulkActionBar {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin: 0.1em 0 0.2em;
+  font-size: 0.9em;
+}
+
+.bulkActionBar .bulkOptionsToggle {
+  align-self: flex-end;
+  cursor: pointer;
+  font-size: 0.9em;
+  padding: 0.1em 0.5em;
+}
+
+.bulkActionBar .bulkOptionsToggle.active {
+  font-weight: bold;
+}
+
+.bulkActionBar .bulkToolbar {
+  display: flex;
   align-items: center;
   gap: 0.6em;
   flex-wrap: wrap;
-  margin: 0.2em 0;
+  margin-top: 0.2em;
   padding: 0.2em 0.3em;
-  font-size: 0.9em;
+}
+
+.bulkActionBar .bulkToolbar[hidden] {
+  display: none;
 }
 
 .bulkActionBar .bulkSelectAll {
@@ -1425,17 +1447,12 @@ div.slider .ui-slider-handle {
   user-select: none;
 }
 
-.bulkActionBar .bulkActions {
-  align-items: center;
-  gap: 0.5em;
-}
-
 .bulkActionBar .bulkCount {
   font-style: italic;
   color: #666;
 }
 
-.bulkActionBar button {
+.bulkActionBar .bulkToolbar button {
   cursor: pointer;
 }
 

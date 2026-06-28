@@ -3,21 +3,24 @@ import type { BulkEntityAdapter } from "./bulk-entity-adapter";
 import { BulkSelection } from "./bulk-selection";
 
 /**
- * DOM glue for one list menu. Mounts a per-row checkbox column and a bulk bar
- * (always-visible "select all" + an actions group shown only when something is
- * selected) onto the menu's `<div class="table">` container. Wires DOM events to a
- * shared BulkSelection and the menu's BulkEntityAdapter, and re-syncs after the
- * list re-renders (selection survives the refresh). Attaches to both legacy-JS and
- * migrated-TS lists, which share the same `.table` of row `<div>`s shape.
+ * DOM glue for one list menu. Adds a "Bulk Options" toggle at the top-right of the
+ * menu; opening it reveals per-row checkboxes plus an inline toolbar (Select all +
+ * Delete / Lock / Unlock / Set color, as the adapter supports). The toolbar stays
+ * open across actions and the selection is kept (deleted rows simply drop off), so
+ * actions can be chained. Wires DOM events to a shared BulkSelection and the menu's
+ * BulkEntityAdapter, and re-syncs after the list re-renders. Attaches to both
+ * legacy-JS and migrated-TS lists, which share the same `.table` of row `<div>`s.
  */
 export class BulkActionBar {
   private readonly adapter: BulkEntityAdapter;
   private readonly selection: BulkSelection;
   private container: HTMLElement | null = null;
   private bar: HTMLElement | null = null;
+  private toggle: HTMLButtonElement | null = null;
+  private toolbar: HTMLElement | null = null;
   private selectAllCheckbox: HTMLInputElement | null = null;
-  private actionsGroup: HTMLElement | null = null;
   private countLabel: HTMLElement | null = null;
+  private bulkMode = false;
 
   constructor(adapter: BulkEntityAdapter) {
     this.adapter = adapter;
@@ -47,22 +50,28 @@ export class BulkActionBar {
     const bar = document.createElement("div");
     bar.className = "bulkActionBar";
     bar.innerHTML = /* html */ `
-      <label class="bulkSelectAll" data-tip="Select or deselect all visible rows">
-        <input type="checkbox" class="bulkSelectAllCheckbox" /> Select all
-      </label>
-      <span class="bulkActions" style="display: none">
+      <button type="button" class="bulkOptionsToggle" data-tip="Show bulk selection options" aria-expanded="false">Bulk Options ▾</button>
+      <div class="bulkToolbar" hidden>
+        <label class="bulkSelectAll" data-tip="Select or deselect all visible rows">
+          <input type="checkbox" class="bulkSelectAllCheckbox" /> Select all
+        </label>
         <span class="bulkCount">0 selected</span>
         <button type="button" class="bulkDelete" data-tip="Delete selected rows">Delete</button>
         ${lockButtons}
         ${colorButton}
-      </span>`;
-    this.container.insertAdjacentElement("afterend", bar);
+      </div>`;
+
+    // place at the top of the menu (above the column header)
+    const host = this.container.closest(".dialog") ?? this.container.parentElement ?? this.container;
+    host.insertAdjacentElement("afterbegin", bar);
 
     this.bar = bar;
+    this.toggle = bar.querySelector(".bulkOptionsToggle");
+    this.toolbar = bar.querySelector(".bulkToolbar");
     this.selectAllCheckbox = bar.querySelector(".bulkSelectAllCheckbox");
-    this.actionsGroup = bar.querySelector(".bulkActions");
     this.countLabel = bar.querySelector(".bulkCount");
 
+    this.toggle?.addEventListener("click", () => this.toggleBulkMode());
     this.selectAllCheckbox?.addEventListener("change", () => this.onToggleSelectAll());
     bar.querySelector(".bulkDelete")?.addEventListener("click", () => this.onDelete());
     bar.querySelector(".bulkLock")?.addEventListener("click", () => this.onSetLock(true));
@@ -83,24 +92,39 @@ export class BulkActionBar {
     this.sync();
   }
 
-  /** Re-add per-row checkboxes after a list re-render and restore their checked state. */
+  /** Re-apply per-row checkboxes (only in bulk mode) after a list re-render. */
   sync(): void {
     if (!this.container || !this.bar) return;
     const rows = Array.from(this.container.children) as HTMLElement[];
     rows.forEach(row => {
       const id = this.adapter.getRowId(row);
-      if (id === null || !this.adapter.isDeletable(id)) return;
+      const existing = row.querySelector<HTMLInputElement>(":scope > input.bulkRowCheckbox");
 
-      let checkbox = row.querySelector<HTMLInputElement>(":scope > input.bulkRowCheckbox");
-      if (!checkbox) {
-        checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.className = "bulkRowCheckbox";
-        row.insertBefore(checkbox, row.firstChild);
+      if (!this.bulkMode || id === null || !this.adapter.isDeletable(id)) {
+        existing?.remove();
+        return;
       }
+
+      const checkbox = existing ?? row.insertBefore(this.makeRowCheckbox(), row.firstChild);
       checkbox.checked = this.selection.isSelected(id);
     });
     this.updateBar();
+  }
+
+  private makeRowCheckbox(): HTMLInputElement {
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "bulkRowCheckbox";
+    return checkbox;
+  }
+
+  private toggleBulkMode(): void {
+    this.bulkMode = !this.bulkMode;
+    if (this.toolbar) this.toolbar.hidden = !this.bulkMode;
+    this.toggle?.setAttribute("aria-expanded", String(this.bulkMode));
+    this.toggle?.classList.toggle("active", this.bulkMode);
+    if (this.toggle) this.toggle.textContent = this.bulkMode ? "Bulk Options ▴" : "Bulk Options ▾";
+    this.sync();
   }
 
   private onToggleSelectAll(): void {
@@ -122,12 +146,11 @@ export class BulkActionBar {
       childKind: this.adapter.childKind,
       describe: deleteChildren => this.adapter.describeCascade(ids, { deleteChildren }),
       onConfirm: deleteChildren => {
-        ids
-          .filter(id => this.adapter.isDeletable(id) && !this.adapter.isLocked(id))
-          .forEach(id => {
-            this.adapter.deleteEntity(id, { deleteChildren });
-          });
-        this.selection.clear();
+        const deletedIds = ids.filter(id => this.adapter.isDeletable(id) && !this.adapter.isLocked(id));
+        deletedIds.forEach(id => {
+          this.adapter.deleteEntity(id, { deleteChildren });
+          this.selection.remove(id); // drop removed rows; keep skipped (locked) ones selected
+        });
         this.adapter.redraw(); // single redraw + list refresh (which re-syncs the bar)
         this.sync();
       }
@@ -139,9 +162,8 @@ export class BulkActionBar {
     this.selection.getSelected().forEach(id => {
       this.adapter.setLock?.(id, locked);
     });
-    this.selection.clear();
     this.adapter.redraw();
-    this.sync();
+    this.sync(); // selection kept so actions can be chained
   }
 
   private onSetColor(): void {
@@ -152,9 +174,8 @@ export class BulkActionBar {
       ids.forEach(id => {
         this.adapter.setColor?.(id, chosenColor);
       });
-      this.selection.clear();
       this.adapter.redraw();
-      this.sync();
+      this.sync(); // selection kept so actions can be chained
     });
   }
 
@@ -173,7 +194,6 @@ export class BulkActionBar {
     if (!this.bar) return;
     const count = this.selection.count;
     if (this.countLabel) this.countLabel.textContent = `${count} selected`;
-    if (this.actionsGroup) this.actionsGroup.style.display = count > 0 ? "inline-flex" : "none";
 
     const visibleIds = this.getSelectableVisibleIds();
     const allSelected = visibleIds.length > 0 && visibleIds.every(id => this.selection.isSelected(id));
