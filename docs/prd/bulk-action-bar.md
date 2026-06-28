@@ -1,6 +1,6 @@
 # PRD: Bulk Action Bar — multi-select delete/edit across civilization menus
 
-Status: in-progress
+Status: done
 
 ## Problem Statement
 
@@ -408,7 +408,7 @@ row (id 0) is non-deletable.
 - [x] The "No market" row cannot be selected/deleted
 
 ### Slice 10 — Terminal visual verification (all menus)  [HITL]
-- Status: in-progress
+- Status: done
 - Blocked by: Slices 1–9, 11
 - User stories: all
 
@@ -420,9 +420,14 @@ reveals per-row checkboxes + an inline toolbar (Select all + Delete / Lock / Unl
 color). The toolbar persists after actions and the selection is kept (deleted rows drop off).
 
 **Acceptance criteria:**
-- [ ] In each of the ten menus: "Bulk Options" reveals checkboxes, filter-aware select-all works, and the toolbar toggles correctly
-- [ ] Delete shows the cascade summary, skips locked rows, and redraws correctly
-- [ ] Child-delete option works in States and Provinces only
-- [ ] Lock/Unlock and Set color (where offered) apply to the whole selection
-- [ ] The old Burgs "Remove All" and Zones remove-mode are gone with no lost capability
-- [ ] Deleting burgs (Burgs menu, and States/Provinces child-delete) removes their map labels
+- [x] In each of the ten menus: "Bulk Options" reveals checkboxes, filter-aware select-all works, and the toolbar toggles correctly
+- [x] Delete shows the cascade summary, skips locked rows, and redraws correctly
+- [x] Child-delete option works in States and Provinces only
+- [x] Lock/Unlock and Set color (where offered) apply to the whole selection
+- [x] The old Burgs "Remove All" and Zones remove-mode are gone with no lost capability
+- [x] Deleting burgs (Burgs menu, and States/Provinces child-delete) removes their map labels
+
+**Verification note (HITL, 2026-06-27):** all menus exercised and passed. Two Review-gate
+fixes were applied and re-verified afterward — bulk Set color now repaints the map for
+Provinces/Cultures/Religions/Zones (not just the list swatch), and a deleted state's former
+capital is re-grouped out of the capital group so its icon is demoted (single and bulk delete).
