@@ -61,3 +61,12 @@ This glossary covers core terminology, data structures, and concepts used throug
 - **Configurator**: A UI for setting up world generation parameters.
 - **Submap**: A tool to generate a new, more detailed map strictly from a selected area of the current map.
 - **Bulk Action Bar**: A reusable multi-select control attached to each list-style overview/editor dialog. Adds a per-row checkbox column plus a filter-aware "select all" header checkbox, and surfaces bulk actions (Delete, Lock, Unlock, Set color) on the current selection. Selection is scoped to the open menu (per-type), not cross-type.
+
+## Save & Persistence
+
+- **Save to Machine**: Saving the full `.map` project file to the user's local disk. The `method="machine"` path of `saveMap` (`src/io/save.ts`), reachable via the Save dialog's *machine* button and the Ctrl+S hotkey. Distinct from saving to [[Browser Storage]] or Dropbox.
+- **File System Access API**: A modern browser capability (`showSaveFilePicker`) that opens the OS File Explorer "Save As" dialog, letting the user choose the folder and filename and returning a reusable [[File Handle]]. Supported only in Chromium-based browsers (Chrome, Edge, Opera, Brave); absent in Firefox and Safari.
+- **Save-Location Picker**: The OS File Explorer dialog shown on *Save to Machine* (where supported) so the user picks the destination folder and filename, instead of the file being dropped silently into the browser's Downloads folder.
+- **File Handle**: A reusable reference to a file on disk (`FileSystemFileHandle`) returned by the [[Save-Location Picker]]. Held in memory for the [[Save Target]] so later Saves overwrite the same file without re-prompting.
+- **Save Target**: The remembered destination ([[File Handle]]) for the current map within a tab session. Set on the first picker save, reused for silent overwrite-in-place on subsequent Saves, and reset when a different map is loaded or generated. Session-only (not persisted across reloads in v1).
+- **Downloads Fallback**: The legacy behavior used when the [[File System Access API]] is unavailable (Firefox/Safari): the `.map` file is written to the browser's Downloads folder, accompanied by a one-time note explaining that the save-location picker isn't supported.
