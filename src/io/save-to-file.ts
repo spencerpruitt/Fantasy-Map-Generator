@@ -20,6 +20,12 @@ export function clearSaveTarget(): void {
   saveTarget = null;
 }
 
+// Expose the reset to legacy public/ scripts (e.g. regenerateMap in main.js),
+// which can't import this module directly.
+if (typeof window !== "undefined") {
+  window.clearSaveTarget = clearSaveTarget;
+}
+
 function isFilePickerSupported(): boolean {
   return typeof window.showSaveFilePicker === "function";
 }

@@ -1309,6 +1309,11 @@ function showStatistics() {
 const regenerateMap = debounce(async function (options) {
   WARN && console.warn("Generate new random map");
 
+  // A brand-new map replaces the current one — forget the previous save target
+  // so the next Save prompts for a fresh location. Undefined until a save has
+  // occurred, in which case there is nothing to forget.
+  window.clearSaveTarget?.();
+
   const cellsDesired = +ensureEl("pointsInput").dataset.cells;
   const shouldShowLoading = cellsDesired > 10000;
   shouldShowLoading && showLoading();

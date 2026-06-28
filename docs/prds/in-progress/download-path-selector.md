@@ -152,16 +152,18 @@ Modules to test:
 - [x] Tests cover outcome → tip mapping including the one-time note
 
 ### Slice 3 — Reset wiring  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 2
 - User stories: 8–9
 
-**What to build:** Call `clearSaveTarget()` at the two map-identity reset points — `parseLoadedData` (a different map loaded) and `regenerateMap` (a new map generated) — so the next Save re-prompts for a location. Initial-load generation needs no explicit reset (target starts empty).
+**What to build:** Call `clearSaveTarget()` at the two map-identity reset points — `parseLoadedData` (a different map loaded) and `regenerateMap` (a new map generated) — so the next Save re-prompts for a location. Initial-load generation needs no explicit reset (target starts empty). `parseLoadedData` is TS and imports `clearSaveTarget` directly; `regenerateMap` is legacy `public/main.js`, so it calls the `window.clearSaveTarget?.()` bridge that the save-to-file module installs on load.
 
 **Acceptance criteria:**
-- [ ] Loading a map calls `clearSaveTarget()`
-- [ ] Generating a new map calls `clearSaveTarget()`
-- [ ] Tests assert the reset happens on load and on regenerate
+- [x] Loading a map calls `clearSaveTarget()` (direct import in `parseLoadedData`)
+- [x] Generating a new map calls `clearSaveTarget()` (via `window.clearSaveTarget?.()` in `regenerateMap`)
+- [x] Tests assert the reset mechanism: `clearSaveTarget()` and the `window.clearSaveTarget` bridge both forget the target so the next save re-opens the picker
+
+**Note:** The reset mechanism (`clearSaveTarget` + the `window` bridge `regenerateMap` invokes) is unit-tested. The two inline call sites live in code that isn't unit-testable in isolation (`parseLoadedData` is a large internal map parser; `regenerateMap` is legacy `main.js`), so their wiring is verified end-to-end in the HITL slice's load-then-save and regenerate-then-save scenarios.
 
 ### Slice 4 — HITL verification  [HITL]
 - Status: todo

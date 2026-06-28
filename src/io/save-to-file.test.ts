@@ -122,4 +122,23 @@ describe("saveToFileSystem", () => {
     expect(picker).toHaveBeenCalledTimes(1);
     expect(outcome).toEqual({ type: "saved-new", filename: "Second.map" });
   });
+
+  it("exposes clearSaveTarget on window so legacy scripts can reset the target", async () => {
+    expect((globalThis as any).clearSaveTarget).toBe(clearSaveTarget);
+
+    const first = makeHandle("First.map");
+    (globalThis as any).showSaveFilePicker = vi.fn(async () => first);
+    await saveToFileSystem("a", "Suggested.map");
+
+    // Legacy regenerateMap calls window.clearSaveTarget?.()
+    (globalThis as any).clearSaveTarget();
+
+    const second = makeHandle("Second.map");
+    const picker = vi.fn(async () => second);
+    (globalThis as any).showSaveFilePicker = picker;
+    const outcome = await saveToFileSystem("b", "Suggested.map");
+
+    expect(picker).toHaveBeenCalledTimes(1);
+    expect(outcome).toEqual({ type: "saved-new", filename: "Second.map" });
+  });
 });

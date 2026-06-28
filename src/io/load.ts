@@ -1,5 +1,6 @@
 import { lazy } from "@/lazy-loaders";
 import { calculateVoronoi, ensureEl, last, link, minmax, parseError, rn } from "@/utils";
+import { clearSaveTarget } from "./save-to-file";
 
 export async function quickLoad(): Promise<void> {
   const blob = await ldb.get("lastMap");
@@ -232,6 +233,10 @@ function showUploadMessage(type: string, mapData: string[] | null, mapVersion: s
 
 async function parseLoadedData(data: string[], mapVersion: string | null): Promise<void> {
   try {
+    // A different map is being loaded — forget the previous map's save target so
+    // the next Save prompts for a fresh location instead of overwriting it.
+    clearSaveTarget();
+
     // exit customization
     if (typeof window.closeDialogs === "function") closeDialogs();
     customization = 0;
