@@ -109,8 +109,8 @@ there is one consistent mechanism everywhere.
 
 ### Behavioral decisions
 
-- **Scope (9 menus):** States, Burgs, Provinces, Cultures, Religions, Military/Regiments,
-  Markers, Zones, Routes.
+- **Scope (10 menus):** States, Burgs, Provinces, Cultures, Religions, Military/Regiments,
+  Markers, Zones, Routes, and **Markets** (Markets added during HITL — see Slice 11).
 - **Selection is per-menu**, never cross-type.
 - **Shared edits are minimal:** Lock and Unlock (all types); Set color only for color-bearing
   types (States, Provinces, Cultures, Religions, Zones).
@@ -384,17 +384,36 @@ toggle in favor of select → Delete.
 **Implementation note:** Zones have no lock (bar shows no Lock/Unlock). Removed the
 `zonesRemove` button, its erase branch in `dragZoneBrush`, and the orphaned hotkeys handler.
 
+### Slice 11 — Roll out to Markets (added during HITL)  [AFK]
+- Status: done
+- Blocked by: Slice 1, Slice 2
+- User stories: 21 (extends scope by user request)
+
+**What to build:** Markets adapter + bar mount on the markets overview (a migrated-TS menu,
+attaches directly). Markets are color-bearing with no lock and no children; the "No market"
+row (id 0) is non-deletable.
+
+**Acceptance criteria:**
+- [x] Bulk delete on markets matches single-delete (Markets.removeMarket); markets layer + list redraw once
+- [x] Set color is offered for markets; no Lock/Unlock (markets have no lock)
+- [x] The "No market" row cannot be selected/deleted
+
 ### Slice 10 — Terminal visual verification (all menus)  [HITL]
-- Status: todo
-- Blocked by: Slices 1–9
+- Status: in-progress
+- Blocked by: Slices 1–9, 11
 - User stories: all
 
 **What to build:** No new code — a single end-of-feature human verification across every
 menu. The agent provides explicit workflows to exercise and expected correct behavior.
 
+**UX note (HITL-revised):** the control is a top-right **"Bulk Options"** toggle; opening it
+reveals per-row checkboxes + an inline toolbar (Select all + Delete / Lock / Unlock / Set
+color). The toolbar persists after actions and the selection is kept (deleted rows drop off).
+
 **Acceptance criteria:**
-- [ ] In each of the nine menus: checkbox select, filter-aware select-all, and the hidden-until-selected bar behave correctly
+- [ ] In each of the ten menus: "Bulk Options" reveals checkboxes, filter-aware select-all works, and the toolbar toggles correctly
 - [ ] Delete shows the cascade summary, skips locked rows, and redraws correctly
 - [ ] Child-delete option works in States and Provinces only
 - [ ] Lock/Unlock and Set color (where offered) apply to the whole selection
 - [ ] The old Burgs "Remove All" and Zones remove-mode are gone with no lost capability
+- [ ] Deleting burgs (Burgs menu, and States/Provinces child-delete) removes their map labels
