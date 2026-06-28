@@ -1,6 +1,6 @@
 # PRD: Save-Location Picker for Save to Machine
 
-Status: in-progress
+Status: done
 Branch: `feat/download-path-selector`
 
 ## Problem Statement
@@ -146,14 +146,16 @@ Modules tested:
 The original "reset wiring" slice (forget a remembered save file on map load/regenerate) no longer applies: the always-prompt design holds no remembered file, so there is nothing to reset. The remembered-handle state, `clearSaveTarget`, the `window.clearSaveTarget` bridge, and the load/regenerate call sites were removed.
 
 ### Slice 4 — HITL verification  [HITL]
-- Status: todo
+- Status: done
 - Blocked by: Slice 2
 
 **What to build:** Single end-of-feature manual verification in real browsers. No new code beyond fixes found during verification.
 
 **Acceptance criteria:**
-- [ ] Chromium: every Save (button + Ctrl+S) opens the picker, pre-filled with a `.map` name
-- [ ] Chromium: choosing an existing file overwrites it; choosing a new name writes a new file
-- [ ] Chromium: the success tip names the chosen file
-- [ ] Chromium: cancelling the picker is a clean no-op (no error, nothing written)
-- [ ] Firefox/Safari: Save falls back to Downloads; the first save shows one combined tip, later saves show only the success tip
+- [x] Chromium: every Save (button + Ctrl+S) opens the picker, pre-filled with a `.map` name
+- [x] Chromium: choosing an existing file overwrites it; choosing a new name writes a new file
+- [x] Chromium: the success tip names the chosen file
+- [x] Chromium: cancelling the picker is a clean no-op (no error, nothing written)
+- [x] Firefox/Safari: Save falls back to Downloads; the first save shows one combined tip, later saves show only the success tip
+
+**Verified:** HITL passed — all scenarios confirmed working in Chromium (picker every save, overwrite vs new file, success tip, clean cancel) and the Downloads fallback path.

@@ -10,5 +10,6 @@
 /_bmad
 /_bmad-output
 /memory
+docs/private/
 .github/agents/bmad-*
 .github/prompts/bmad-*
