@@ -1,6 +1,7 @@
 // Save the whole .map project to storage, machine or cloud
 import { lazy } from "@/lazy-loaders";
 import { ensureEl, link, parseError, rn } from "@/utils";
+import { type SaveOutcome, saveToFileSystem } from "./save-to-file";
 
 type SaveMethod = "storage" | "machine" | "dropbox";
 
@@ -13,7 +14,7 @@ export async function saveMap(method: SaveMethod): Promise<void> {
     const filename = `${getFileName()}.map`;
 
     if (method === "storage") await saveToStorage(mapData, true);
-    if (method === "machine") saveToMachine(mapData, filename);
+    if (method === "machine") await saveToMachine(mapData, filename);
     if (method === "dropbox") await saveToDropbox(mapData, filename);
   } catch (error) {
     ERROR && console.error(error);
@@ -191,18 +192,40 @@ export async function saveToStorage(mapData: string, showTip = false): Promise<v
   showTip && tip("Map is saved to the browser storage", false, "success");
 }
 
-// download map file
-function saveToMachine(mapData: string, filename: string): void {
-  const blob = new Blob([mapData], { type: "text/plain" });
-  const URL = window.URL.createObjectURL(blob);
+const DOWNLOADS_FALLBACK_NOTICE_KEY = "savePickerFallbackNoticeShown";
 
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = URL;
-  link.click();
+// Explain, only the first time ever on this browser, why a save-location picker
+// wasn't offered and the file went to Downloads instead.
+function showDownloadsFallbackNoticeOnce(): void {
+  if (localStorage.getItem(DOWNLOADS_FALLBACK_NOTICE_KEY)) return;
+  tip(
+    "Your browser can't offer a save-location picker, so the map was saved to the Downloads folder. Use a Chromium browser (Chrome, Edge) to choose where maps are saved.",
+    false,
+    "info",
+    12000
+  );
+  localStorage.setItem(DOWNLOADS_FALLBACK_NOTICE_KEY, "true");
+}
 
-  tip('Map is saved to the "Downloads" folder (CTRL + J to open)', true, "success", 8000);
-  setTimeout(() => window.URL.revokeObjectURL(URL), 5000);
+// Map a save outcome to user feedback. A cancelled picker is a silent no-op.
+export function notifySaveOutcome(outcome: SaveOutcome): void {
+  if (outcome.type === "cancelled") return;
+
+  if (outcome.type === "downloaded-fallback") {
+    tip('Map is saved to the "Downloads" folder (CTRL + J to open)', true, "success", 8000);
+    showDownloadsFallbackNoticeOnce();
+    return;
+  }
+
+  // saved-new | overwritten — both write to the user-chosen file.
+  tip(`Map is saved to "${outcome.filename}"`, true, "success", 8000);
+}
+
+// Save the .map file to the user's machine via the save-location picker (or the
+// Downloads fallback where unsupported), then report the outcome.
+async function saveToMachine(mapData: string, filename: string): Promise<void> {
+  const outcome = await saveToFileSystem(mapData, filename);
+  notifySaveOutcome(outcome);
 }
 
 async function saveToDropbox(mapData: string, filename: string): Promise<void> {

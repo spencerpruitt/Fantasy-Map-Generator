@@ -138,18 +138,18 @@ Modules to test:
 - [x] Unit tests cover all of the above by stubbing browser globals
 
 ### Slice 2 — Wire into Save to Machine  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 1
 - User stories: 7, 10, 13–17
 
 **What to build:** Make `saveToMachine` call `saveToFileSystem` and map the outcome to user feedback: a success tip naming the file on `saved-new`/`overwritten`; a success tip plus a one-time Downloads-fallback note (persisted flag, following the existing `noReminder` one-time-message convention) on `downloaded-fallback`; nothing on `cancelled`. The existing edit-mode guard, `closeDialogs`, and the try/catch error dialog with Retry are preserved, so denied-permission/disk errors surface there. After this slice, both the Save dialog's *machine* button and Ctrl+S open the picker.
 
 **Acceptance criteria:**
-- [ ] `saved-new` / `overwritten` show a success tip naming the saved file
-- [ ] `downloaded-fallback` shows a success tip plus the Downloads note only the first time ever (flag persisted), and not on later fallback saves
-- [ ] `cancelled` shows no tip and no error
-- [ ] Edit-mode guard and the existing error dialog (with Retry) still work
-- [ ] Tests cover outcome → tip mapping including the one-time note
+- [x] `saved-new` / `overwritten` show a success tip naming the saved file
+- [x] `downloaded-fallback` shows a success tip plus the Downloads note only the first time ever (flag persisted), and not on later fallback saves
+- [x] `cancelled` shows no tip and no error
+- [x] Edit-mode guard and the existing error dialog (with Retry) still work
+- [x] Tests cover outcome → tip mapping including the one-time note
 
 ### Slice 3 — Reset wiring  [AFK]
 - Status: todo
