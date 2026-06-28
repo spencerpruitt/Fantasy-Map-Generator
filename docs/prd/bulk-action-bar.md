@@ -300,7 +300,7 @@ workflow becomes header select-all → Delete.
   kept. Select-all is filter-aware (operates on the currently-rendered, filtered rows).
 
 ### Slice 5 — Roll out to Provinces (+ child-delete)  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 1, Slice 3
 - User stories: 12, 21
 
@@ -309,9 +309,13 @@ delete option so the "also delete contained burgs" checkbox works for provinces 
 are color-bearing.
 
 **Acceptance criteria:**
-- [ ] Bulk delete on provinces matches single-delete cascade
-- [ ] The child-delete option deletes contained burgs for provinces
-- [ ] Set color is offered for provinces
+- [x] Bulk delete on provinces matches single-delete cascade
+- [x] The child-delete option deletes contained burgs for provinces
+- [x] Set color is offered for provinces
+
+**Implementation note:** legacy menu; adapter declares `childKind: "burgs"`, enumerates a
+province's burgs from cells (not the cache). Without child-delete burgs are unassigned; with
+it they go through `Burgs.remove`. Mounted via the `window.bulkBars` bridge.
 
 ### Slice 6 — Roll out to Cultures + Religions  [AFK]
 - Status: done
@@ -333,18 +337,23 @@ origins), `create{Cultures,Religions}Adapter(redraw)` factories, editor mount/sy
 redraw. `isDeletable` excludes id 0 (Wildlands / No religion). 40 new unit tests.
 
 ### Slice 7 — Roll out to Military / Regiments  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 1
 - User stories: 21
 
-**What to build:** Regiments/Military adapter (lock + delete; no color). Mount the bar.
+**What to build:** Regiments/Military adapter (delete; no color, no lock). Mount the bar.
+
+**Scope change (user-approved):** the regiments overview had *no* single-delete to reuse, so
+this slice **adds** a regiment delete: a pure `removeRegimentData(stateId, regimentId)` shared
+by the regiment editor's `removeRegiment` and bulk delete. No lock field exists, so no
+Lock/Unlock. Regiment `i` is per-state, so the bar row id is a composite of state + regiment.
 
 **Acceptance criteria:**
-- [ ] Bulk delete on regiments matches single-delete
-- [ ] Set color is not offered
+- [x] Bulk delete on regiments removes the selected regiments (and the regiment editor reuses the same data path)
+- [x] Set color is not offered
 
 ### Slice 8 — Roll out to Markers + Routes  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 1, Slice 4
 - User stories: 21
 
@@ -352,12 +361,15 @@ redraw. `isDeletable` excludes id 0 (Wildlands / No religion). 40 new unit tests
 color, no children). Mount the bar on both.
 
 **Acceptance criteria:**
-- [ ] Bulk delete on markers and on routes matches single-delete
-- [ ] Set color is not offered in either menu
-- [ ] The bar attaches and re-syncs on both legacy lists
+- [x] Bulk delete on markers and on routes matches single-delete
+- [x] Set color is not offered in either menu
+- [x] The bar attaches and re-syncs on both legacy lists
+
+**Implementation note:** Markers rows use `data-i` (not data-id); `Routes.remove` takes the
+route object (resolved from the row id). Both mounted via the bridge.
 
 ### Slice 9 — Roll out to Zones  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 1, Slice 2, Slice 4
 - User stories: 17, 21, 23
 
@@ -365,9 +377,12 @@ color, no children). Mount the bar on both.
 toggle in favor of select → Delete.
 
 **Acceptance criteria:**
-- [ ] Bulk delete on zones removes the selected zones
-- [ ] The old remove-mode toggle is removed and replaced by the bar's Delete
-- [ ] Set color is offered for zones
+- [x] Bulk delete on zones removes the selected zones
+- [x] The old remove-mode toggle is removed and replaced by the bar's Delete
+- [x] Set color is offered for zones
+
+**Implementation note:** Zones have no lock (bar shows no Lock/Unlock). Removed the
+`zonesRemove` button, its erase branch in `dragZoneBrush`, and the orphaned hotkeys handler.
 
 ### Slice 10 — Terminal visual verification (all menus)  [HITL]
 - Status: todo
