@@ -542,9 +542,9 @@ function removeReligion(religionId: number): void {
   refreshReligionsEditor();
 }
 
-// Redraw after a bulk delete. The bulk path mutates pack via the shared cascade
-// only, so here we clear the SVG artifacts of every removed religion (those a
-// refresh does not rebuild) before refreshing the list.
+// Redraw after a bulk religion action. Clears removed religions' SVG artifacts, repaints
+// the religion regions from pack (so a bulk Set color shows on the map, not just in the
+// list), then refreshes the list.
 function redrawReligionsAfterBulkDelete(): void {
   pack.religions.forEach(r => {
     if (!r.removed) return;
@@ -552,6 +552,7 @@ function redrawReligionsAfterBulkDelete(): void {
     relig.select(`#religion-gap${r.i}`).remove();
     debug.select(`#religionsCenter${r.i}`).remove();
   });
+  drawReligions();
   refreshReligionsEditor();
 }
 

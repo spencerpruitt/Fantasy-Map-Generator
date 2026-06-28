@@ -8,7 +8,13 @@ function editZones() {
   updateFilters();
   zonesEditorAddLines();
 
-  window.bulkBars?.mount("zones", {redraw: zonesEditorAddLines});
+  window.bulkBars?.mount("zones", {
+    redraw: () => {
+      // drawZones repaints zone polygons so a bulk Set color shows on the map
+      drawZones();
+      zonesEditorAddLines();
+    }
+  });
 
   if (modules.editZones) return;
   modules.editZones = true;

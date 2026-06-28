@@ -711,11 +711,19 @@ function stateRemove(stateId: number): void {
   const provinceIds = [...(state.provinces || [])];
   const capitalBurgId = state.capital;
 
-  removeStateDom(stateId, provinceIds, capitalBurgId);
+  removeStateDom(stateId, provinceIds);
 
   // shared data cascade: burgs → neutral, cells released, provinces & military
   // notes removed, neighbor refs cleaned, state marked removed
   removeStateCascade(stateId);
+
+  // re-group the former capital AFTER the cascade clears its `capital` flag, so
+  // defineGroup demotes it out of the capital group (which keys on features.capital);
+  // doing this before the cascade would re-pick the capital group and keep its icon
+  if (capitalBurgId) {
+    const capital = pack.burgs[capitalBurgId];
+    if (capital) Burgs.changeGroup(capital, null);
+  }
 
   debug.selectAll(".highlight").remove();
   redrawStatesAfterDelete();
@@ -724,18 +732,13 @@ function stateRemove(stateId: number): void {
 // Remove the SVG/DOM artifacts for a single state. Kept separate from the data
 // cascade so single-delete and bulk-delete share one data path; the bulk path
 // instead relies on redrawStatesAfterBulkDelete to clear removed-state artifacts.
-function removeStateDom(stateId: number, provinceIds: number[], capitalBurgId: number | undefined): void {
+function removeStateDom(stateId: number, provinceIds: number[]): void {
   statesBody.select(`#state${stateId}`).remove();
   statesBody.select(`#state-gap${stateId}`).remove();
   statesHalo.select(`#state-border${stateId}`).remove();
   labels.select(`#stateLabel${stateId}`).remove();
   defs.select(`#textPath_stateLabel${stateId}`).remove();
   unfog(`focusState${stateId}`);
-
-  if (capitalBurgId) {
-    const capital = pack.burgs[capitalBurgId];
-    if (capital) Burgs.changeGroup(capital, null);
-  }
 
   // remove emblem
   ensureEl(`stateCOA${stateId}`).remove();
@@ -789,8 +792,27 @@ function redrawStatesAfterBulkDelete(): void {
     removeBurgIcon(burg.i);
     removeBurgLabel(burg.i);
   });
+  regroupOrphanedCapitals();
   debug.selectAll(".highlight").remove();
   redrawStatesAfterDelete();
+}
+
+// A deleted state's former capital is reassigned to neutral with its `capital` flag
+// cleared, but it still sits in its old capital group, so its icon stays a capital.
+// Single-delete re-groups it directly (it has the capital id to hand); the bulk
+// cascade loses that reference, so here we find burgs left in a capital-keyed group
+// without the flag and demote them. Keyed on the group's `features.capital`, so a
+// renamed capital group still works.
+function regroupOrphanedCapitals(): void {
+  const capitalGroupNames = new Set(
+    (options.burgs?.groups ?? []).filter(group => group.features?.capital).map(group => group.name)
+  );
+  if (!capitalGroupNames.size) return;
+
+  pack.burgs.forEach(burg => {
+    if (!burg.i || burg.removed || burg.capital) return;
+    if (burg.group && capitalGroupNames.has(burg.group)) Burgs.changeGroup(burg, null);
+  });
 }
 
 function toggleLegend(): void {

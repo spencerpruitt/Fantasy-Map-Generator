@@ -230,9 +230,13 @@ redraw and selection clear.
   differing grid headers; a bar-hosted select-all is robust and consistent). The *action*
   group ("N selected" + Delete) stays hidden until ≥1 row is selected, satisfying the
   "hidden until selected" intent; per-row checkboxes are always visible.
-- **Known minor (HITL):** a deleted state's former capital burg keeps its capital icon styling
-  after bulk delete (the batch redraw doesn't re-group burg icons); single-delete still
-  re-groups it. Cosmetic only — flag for Slice 10.
+- **Former-capital regroup (fixed at Review, HITL re-verify):** deleting a state reassigns its
+  capital to neutral and re-groups it out of the capital group so its icon is demoted to a
+  regular burg. Single-delete re-groups the captured capital *after* the data cascade clears
+  its `capital` flag (an earlier ordering ran `changeGroup` first, which re-picked the capital
+  group and kept the icon); bulk delete re-groups orphaned capitals — a capital-group burg
+  whose `capital` flag was cleared — in the batch redraw via `regroupOrphanedCapitals` (keyed
+  on the group's `features.capital`, so a renamed capital group still works).
 
 ### Slice 2 — Shared edits on States: Lock / Unlock / Set color  [AFK]
 - Status: done
@@ -257,6 +261,11 @@ after the action.
 - States adapter gained `setLock`/`setColor` (pure pack mutations); unit-tested
   including the lock-then-resist-delete path. Army/region recolor fidelity is handled
   by the redraw — HITL to confirm at Slice 10.
+- **Set-color map repaint (fixed at Review, HITL re-verify):** bulk Set color mutates the
+  entity's `color` in `pack`, so the per-type `redraw` must repaint that layer for the change
+  to show on the map, not just in the list swatch (story 19). States/Markets already redrew
+  their layer; Provinces/Cultures/Religions/Zones now call `drawProvinces`/`drawCultures`/
+  `drawReligions`/`drawZones` in their bulk redraw.
 
 ### Slice 3 — Optional "also delete contained burgs"  [AFK]
 - Status: done

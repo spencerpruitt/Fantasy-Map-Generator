@@ -566,15 +566,16 @@ function removeCulture(cultureId: number): void {
   refreshCulturesEditor();
 }
 
-// Redraw after a bulk delete. The bulk path mutates pack via the shared cascade
-// only, so here we clear the SVG artifacts of every removed culture (those a refresh
-// does not rebuild) before refreshing the list and culture centers.
+// Redraw after a bulk culture action. Clears removed cultures' SVG artifacts, repaints
+// the culture regions from pack (so a bulk Set color shows on the map, not just in the
+// list), then refreshes the list, stats, and culture centers.
 function redrawCulturesAfterBulkDelete(): void {
   pack.cultures.forEach(c => {
     if (!c.removed) return;
     cults.select(`#culture${c.i}`).remove();
     debug.select(`#cultureCenter${c.i}`).remove();
   });
+  drawCultures();
   refreshCulturesEditor();
 }
 

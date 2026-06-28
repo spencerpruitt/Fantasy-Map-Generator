@@ -14,6 +14,8 @@ function editProvinces() {
 
   window.bulkBars?.mount("provinces", {
     redraw: () => {
+      // drawProvinces repaints region fills so a bulk Set color shows on the map
+      if (layerIsOn("toggleProvinces")) drawProvinces();
       if (layerIsOn("toggleBorders")) drawBorders();
       refreshProvincesEditor();
     }
