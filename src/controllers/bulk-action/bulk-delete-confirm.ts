@@ -31,7 +31,7 @@ export function bulkDeleteConfirm(params: {
 
   const childToggle = childKind
     ? `<label class="bulkDeleteChildrenLabel" style="display:block; margin-top:0.4em">
-        <input type="checkbox" id="bulkDeleteChildren" /> Also delete contained ${childKind}
+        <input type="checkbox" id="bulkDeleteChildren" class="native" /> Also delete contained ${childKind}
       </label>`
     : "";
   const message = `<div id="bulkCascadeSummary">${renderSummary(describe(false))}</div>${childToggle}<p>This action cannot be reverted.</p>`;

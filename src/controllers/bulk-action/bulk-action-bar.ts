@@ -53,7 +53,7 @@ export class BulkActionBar {
       <button type="button" class="bulkOptionsToggle" data-tip="Show bulk selection options" aria-expanded="false">Bulk Options ▾</button>
       <div class="bulkToolbar" hidden>
         <label class="bulkSelectAll" data-tip="Select or deselect all visible rows">
-          <input type="checkbox" class="bulkSelectAllCheckbox" /> Select all
+          <input type="checkbox" class="bulkSelectAllCheckbox native" /> Select all
         </label>
         <span class="bulkCount">0 selected</span>
         <button type="button" class="bulkDelete" data-tip="Delete selected rows">Delete</button>
@@ -114,7 +114,8 @@ export class BulkActionBar {
   private makeRowCheckbox(): HTMLInputElement {
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
-    checkbox.className = "bulkRowCheckbox";
+    // `native` opts out of the app's global rule that hides unstyled checkboxes
+    checkbox.className = "bulkRowCheckbox native";
     return checkbox;
   }
 
