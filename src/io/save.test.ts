@@ -45,23 +45,40 @@ describe("notifySaveOutcome", () => {
     expect(tipMock).not.toHaveBeenCalled();
   });
 
-  it("on Downloads fallback shows the success tip plus a one-time explanatory note", () => {
+  it("on the first Downloads fallback shows a single tip that confirms the save and explains the missing picker", () => {
     notifySaveOutcome({ type: "downloaded-fallback", filename: "MyWorld.map" });
 
-    // One success tip ("Downloads folder") + one explanatory note.
-    expect(tipMock).toHaveBeenCalledTimes(2);
-    expect(tipMock).toHaveBeenCalledWith(expect.stringContaining("Downloads"), true, "success", 8000);
-    expect(tipMock.mock.calls.some(([message]) => message.includes("save-location picker"))).toBe(true);
+    // Exactly one tip — a second tip() would overwrite the first in the tooltip.
+    expect(tipMock).toHaveBeenCalledTimes(1);
+    const [message] = tipMock.mock.calls[0];
+    expect(message.includes("Downloads")).toBe(true);
+    expect(message.includes("save-location picker")).toBe(true);
   });
 
-  it("does not repeat the explanatory note on later fallback saves", () => {
+  it("on later fallback saves shows only the success tip, not the explanation", () => {
     notifySaveOutcome({ type: "downloaded-fallback", filename: "MyWorld.map" });
     tipMock.mockClear();
 
     notifySaveOutcome({ type: "downloaded-fallback", filename: "MyWorld.map" });
 
-    // Only the success tip this time; the explanatory note is suppressed.
     expect(tipMock).toHaveBeenCalledTimes(1);
-    expect(tipMock).toHaveBeenCalledWith(expect.stringContaining("Downloads"), true, "success", 8000);
+    const [message] = tipMock.mock.calls[0];
+    expect(message.includes("Downloads")).toBe(true);
+    expect(message.includes("save-location picker")).toBe(false);
+  });
+
+  it("still saves (no throw, success tip) when localStorage is unavailable", () => {
+    (globalThis as any).localStorage = {
+      getItem: () => {
+        throw new Error("storage disabled");
+      },
+      setItem: () => {
+        throw new Error("storage disabled");
+      },
+      removeItem: () => {}
+    };
+
+    expect(() => notifySaveOutcome({ type: "downloaded-fallback", filename: "MyWorld.map" })).not.toThrow();
+    expect(tipMock).toHaveBeenCalledTimes(1);
   });
 });

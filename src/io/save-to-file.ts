@@ -14,8 +14,8 @@ export type SaveOutcome =
 
 let saveTarget: FileSystemFileHandle | null = null;
 
-// Forget the remembered file so the next save re-opens the picker. Called when a
-// different map is loaded or a new map is generated.
+// Forget the remembered file (on map load or regenerate) so the next save
+// re-opens the picker.
 export function clearSaveTarget(): void {
   saveTarget = null;
 }
@@ -30,50 +30,53 @@ function isFilePickerSupported(): boolean {
   return typeof window.showSaveFilePicker === "function";
 }
 
+// Restrict the picker to .map files so the chosen name defaults to the right
+// extension.
+const MAP_FILE_TYPES = [{ description: "Fantasy Map Generator map", accept: { "application/octet-stream": [".map"] } }];
+
 async function writeToHandle(handle: FileSystemFileHandle, mapData: string): Promise<void> {
   const writable = await handle.createWritable();
   await writable.write(mapData);
   await writable.close();
 }
 
-// Legacy download path for browsers without the File System Access API: write the
-// blob to the Downloads folder via a transient anchor element.
-function downloadToMachine(mapData: string, filename: string): void {
-  const blob = new Blob([mapData], { type: "text/plain" });
-  const url = window.URL.createObjectURL(blob);
-
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = url;
-  link.click();
-
-  setTimeout(() => window.URL.revokeObjectURL(url), 5000);
-}
-
 export async function saveToFileSystem(mapData: string, suggestedName: string): Promise<SaveOutcome> {
   if (!isFilePickerSupported()) {
-    downloadToMachine(mapData, suggestedName);
+    // No File System Access API — reuse the app's shared download helper.
+    downloadFile(mapData, suggestedName);
     return { type: "downloaded-fallback", filename: suggestedName };
   }
 
   if (saveTarget) {
-    await writeToHandle(saveTarget, mapData);
-    return { type: "overwritten", filename: saveTarget.name };
+    const handle = saveTarget;
+    try {
+      await writeToHandle(handle, mapData);
+    } catch (error) {
+      // The remembered file may have been moved, deleted, or had its write
+      // permission revoked. Forget it so the next save re-opens the picker
+      // instead of failing forever against a dead handle.
+      saveTarget = null;
+      throw error;
+    }
+    return { type: "overwritten", filename: handle.name };
   }
 
   let handle: FileSystemFileHandle;
   try {
-    handle = await window.showSaveFilePicker({ suggestedName });
+    handle = await window.showSaveFilePicker({ suggestedName, types: MAP_FILE_TYPES });
   } catch (error) {
-    // The picker throws AbortError when the user dismisses the dialog — not a
-    // failure, just nothing to save. Any other error is a real problem.
-    if (error instanceof Error && error.name === "AbortError") {
+    // The picker rejects with a DOMException named AbortError when the user
+    // dismisses the dialog — not a failure, just nothing to save. (DOMException
+    // isn't reliably `instanceof Error` across engines, so check the name only.)
+    if ((error as { name?: string } | null)?.name === "AbortError") {
       return { type: "cancelled" };
     }
     throw error;
   }
 
-  saveTarget = handle;
+  // Only remember the file once the first write succeeds, so a failed first
+  // write re-opens the picker next time instead of trapping a bad handle.
   await writeToHandle(handle, mapData);
+  saveTarget = handle;
   return { type: "saved-new", filename: handle.name };
 }

@@ -194,17 +194,41 @@ export async function saveToStorage(mapData: string, showTip = false): Promise<v
 
 const DOWNLOADS_FALLBACK_NOTICE_KEY = "savePickerFallbackNoticeShown";
 
-// Explain, only the first time ever on this browser, why a save-location picker
-// wasn't offered and the file went to Downloads instead.
-function showDownloadsFallbackNoticeOnce(): void {
-  if (localStorage.getItem(DOWNLOADS_FALLBACK_NOTICE_KEY)) return;
+// Whether the one-time fallback explanation has already been shown on this
+// browser. Guarded because localStorage can throw (e.g. Safari private mode);
+// a save must never fail just because we couldn't read/write this flag.
+function fallbackNoticeAlreadyShown(): boolean {
+  try {
+    return localStorage.getItem(DOWNLOADS_FALLBACK_NOTICE_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
+function rememberFallbackNoticeShown(): void {
+  try {
+    localStorage.setItem(DOWNLOADS_FALLBACK_NOTICE_KEY, "true");
+  } catch {
+    // Storage unavailable — the note may show again next time; harmless.
+  }
+}
+
+// A single tip per fallback save: the first time also explains why no picker was
+// offered. (One tip, not two — a second tip() would overwrite the first, since
+// tip() replaces the tooltip's contents.)
+function notifyDownloadsFallback(): void {
+  if (fallbackNoticeAlreadyShown()) {
+    tip('Map is saved to the "Downloads" folder (CTRL + J to open)', true, "success", 8000);
+    return;
+  }
+
   tip(
-    "Your browser can't offer a save-location picker, so the map was saved to the Downloads folder. Use a Chromium browser (Chrome, Edge) to choose where maps are saved.",
-    false,
-    "info",
+    'Map is saved to the "Downloads" folder (CTRL + J). Your browser can\'t offer a save-location picker — use a Chromium browser (Chrome, Edge) to choose where maps are saved.',
+    true,
+    "success",
     12000
   );
-  localStorage.setItem(DOWNLOADS_FALLBACK_NOTICE_KEY, "true");
+  rememberFallbackNoticeShown();
 }
 
 // Map a save outcome to user feedback. A cancelled picker is a silent no-op.
@@ -212,8 +236,7 @@ export function notifySaveOutcome(outcome: SaveOutcome): void {
   if (outcome.type === "cancelled") return;
 
   if (outcome.type === "downloaded-fallback") {
-    tip('Map is saved to the "Downloads" folder (CTRL + J to open)', true, "success", 8000);
-    showDownloadsFallbackNoticeOnce();
+    notifyDownloadsFallback();
     return;
   }
 

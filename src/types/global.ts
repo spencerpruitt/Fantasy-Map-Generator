@@ -140,8 +140,8 @@ declare global {
   }) => Promise<FileSystemFileHandle>;
 
   // Bridge so legacy public/ scripts can forget the remembered save target.
-  // Undefined until the save module has been lazy-loaded (i.e. until a save has
-  // happened), at which point there is nothing to forget anyway.
+  // Undefined until the save-to-file module has loaded; before then no save has
+  // happened, so there is nothing to forget anyway.
   var clearSaveTarget: (() => void) | undefined;
   var Dropbox: any; // dropbox-sdk global, loaded on demand from libs/dropbox-sdk.min.js
   var rulers: any; // Rulers instance (classic)
