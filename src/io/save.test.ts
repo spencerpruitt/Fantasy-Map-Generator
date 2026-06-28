@@ -25,15 +25,8 @@ describe("notifySaveOutcome", () => {
     vi.restoreAllMocks();
   });
 
-  it("shows a success tip naming the file for a new save", () => {
-    notifySaveOutcome({ type: "saved-new", filename: "MyWorld.map" });
-
-    expect(tipMock).toHaveBeenCalledTimes(1);
-    expect(tipMock).toHaveBeenCalledWith(expect.stringContaining("MyWorld.map"), true, "success", 8000);
-  });
-
-  it("shows a success tip naming the file when overwriting", () => {
-    notifySaveOutcome({ type: "overwritten", filename: "MyWorld.map" });
+  it("shows a success tip naming the file the user saved to", () => {
+    notifySaveOutcome({ type: "saved", filename: "MyWorld.map" });
 
     expect(tipMock).toHaveBeenCalledTimes(1);
     expect(tipMock).toHaveBeenCalledWith(expect.stringContaining("MyWorld.map"), true, "success", 8000);

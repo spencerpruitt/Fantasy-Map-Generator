@@ -240,7 +240,7 @@ export function notifySaveOutcome(outcome: SaveOutcome): void {
     return;
   }
 
-  // saved-new | overwritten — both write to the user-chosen file.
+  // saved — written to the file the user chose in the picker.
   tip(`Map is saved to "${outcome.filename}"`, true, "success", 8000);
 }
 

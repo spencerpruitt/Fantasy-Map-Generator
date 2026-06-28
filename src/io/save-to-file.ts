@@ -1,30 +1,15 @@
-// Save Target / file writer for the .map "Save to Machine" path.
+// File writer for the .map "Save to Machine" path.
 //
-// Encapsulates the File System Access API (Chromium-only): on the first save it
-// opens the OS Save-Location Picker and remembers the chosen file (the session
-// Save Target); later saves overwrite that file in place without a dialog. The
-// remembered handle lives only for the tab session. The caller owns all user
-// messaging — this module just reports a discriminated outcome.
+// Encapsulates the File System Access API (Chromium-only): every save opens the
+// OS Save-Location Picker so the user chooses the folder and filename each time,
+// then writes the map there. Where the API is unavailable (Firefox/Safari) it
+// falls back to a Downloads write. The caller owns all user messaging — this
+// module just reports a discriminated outcome.
 
 export type SaveOutcome =
-  | { type: "saved-new"; filename: string }
-  | { type: "overwritten"; filename: string }
+  | { type: "saved"; filename: string }
   | { type: "downloaded-fallback"; filename: string }
   | { type: "cancelled" };
-
-let saveTarget: FileSystemFileHandle | null = null;
-
-// Forget the remembered file (on map load or regenerate) so the next save
-// re-opens the picker.
-export function clearSaveTarget(): void {
-  saveTarget = null;
-}
-
-// Expose the reset to legacy public/ scripts (e.g. regenerateMap in main.js),
-// which can't import this module directly.
-if (typeof window !== "undefined") {
-  window.clearSaveTarget = clearSaveTarget;
-}
 
 function isFilePickerSupported(): boolean {
   return typeof window.showSaveFilePicker === "function";
@@ -47,20 +32,6 @@ export async function saveToFileSystem(mapData: string, suggestedName: string): 
     return { type: "downloaded-fallback", filename: suggestedName };
   }
 
-  if (saveTarget) {
-    const handle = saveTarget;
-    try {
-      await writeToHandle(handle, mapData);
-    } catch (error) {
-      // The remembered file may have been moved, deleted, or had its write
-      // permission revoked. Forget it so the next save re-opens the picker
-      // instead of failing forever against a dead handle.
-      saveTarget = null;
-      throw error;
-    }
-    return { type: "overwritten", filename: handle.name };
-  }
-
   let handle: FileSystemFileHandle;
   try {
     handle = await window.showSaveFilePicker({ suggestedName, types: MAP_FILE_TYPES });
@@ -74,9 +45,6 @@ export async function saveToFileSystem(mapData: string, suggestedName: string): 
     throw error;
   }
 
-  // Only remember the file once the first write succeeds, so a failed first
-  // write re-opens the picker next time instead of trapping a bad handle.
   await writeToHandle(handle, mapData);
-  saveTarget = handle;
-  return { type: "saved-new", filename: handle.name };
+  return { type: "saved", filename: handle.name };
 }
