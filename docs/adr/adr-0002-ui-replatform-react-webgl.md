@@ -1,6 +1,6 @@
 # ADR-0002: Re-platform the UI on React with a hybrid WebGL+SVG renderer
 
-**Status:** Proposed
+**Status:** Accepted
 
 **Date:** 2026-06-28
 
@@ -122,7 +122,8 @@ reassignments, a declared layer tree) survives and folds into the new design.
 - The first concrete work is **not** the re-platform itself but the AR-1 `.map` schema PRD
   (`docs/prds/backlog/`), followed by AR-6, sequencing the non-negotiable compatibility work
   ahead of the churn.
-- Status is **Proposed** until the user signs off at Review; on acceptance, `ARCHITECTURE.md`
-  is updated in the same change and the status flips to Accepted.
+- **Accepted 2026-06-28.** `ARCHITECTURE.md` updated in the same change to name React (UI
+  chrome) and the hybrid WebGL+SVG renderer, and to draw the chrome-vs-renderer line for the
+  "framework-free, direct injection" guidance.
 - No code or `.map` impact from this ADR itself — it records direction. The `.map` format is
   explicitly protected (round-trip preserved) by every step it authorizes.

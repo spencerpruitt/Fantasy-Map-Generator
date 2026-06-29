@@ -14,7 +14,19 @@ Main goals:
 - Enable easier contribution and onboarding
 - Support gradual migration from JavaScript to TypeScript
 - Improve long-term maintainability without breaking existing `.map` files
-- Allow alternative renderers in the future (e.g. WebGL)
+- Drive the **UI chrome with React** and render the map through a **hybrid WebGL+SVG** view
+  layer, while preserving the TS domain core — see
+  [ADR-0002](docs/adr/adr-0002-ui-replatform-react-webgl.md)
+
+> **UI re-platform (ADR-0002, Accepted).** The lead north-star goal is a UI/UX overhaul, so the
+> UI editor layer is being **re-platformed on React** rather than hand-finished in vanilla TS.
+> Two boundaries are load-bearing: (1) **React governs UI _chrome_ only** — panels, editors,
+> dialogs, toolbars, lists — and **never the map cells**, which stay in the renderer; (2) the
+> renderer is **hybrid** — WebGL/canvas for dense fills/terrain, an SVG/HTML overlay for labels,
+> vector paths, filters, and click-targets. The TS **domain core** (generators, state, io) is
+> preserved unchanged; the jQuery shell is retired. Full-replacement end-state, executed as
+> incremental merged slices, with `.map` round-tripping at every step. The sections below note
+> where this reshapes the original vanilla-TS guidance.
 
 ---
 
@@ -195,6 +207,14 @@ The same world state could theoretically support:
 - External engine export
 - Server-side rendering
 
+**Committed direction (ADR-0002): a hybrid renderer.** WebGL/canvas draws the dense, slow
+layers (cell fills, terrain, heightmap — the layers that are pathological as tens of thousands
+of SVG nodes); an **SVG/HTML overlay** on top draws labels, anti-aliased vector paths
+(coastlines, rivers, borders), filters (relief, texture), and click-targets. This captures the
+performance win without rebuilding text and vector rendering as shaders. The renderer-agnostic
+state boundary above is what makes this swap possible; AR-1 (`.map` schema) and AR-6 (`grid`
+typing) harden that boundary first.
+
 ---
 
 # Project Structure
@@ -341,6 +361,13 @@ A generator turns inputs into world data.
 ## Renderers (View)
 
 A renderer is a pure projection of state into visuals.
+
+> **Scope of this guidance (ADR-0002).** "Renderer" here means the **map** view layer — the
+> WebGL fills and the SVG map overlay. The "framework-free, direct injection / vanilla-first"
+> rules below apply to **that** layer, which keeps full granular control over what is emitted and
+> never goes through React. The **UI chrome** (panels, dialogs, lists, toolbars) is the opposite:
+> it is built with **React**, whose component model is the right tool there. Do not render map
+> cells as React components, and do not hand-roll chrome lifecycle in vanilla JS.
 
 - **Idempotent and stateless.** Drawing the same state twice yields the same output;
   re-running never accumulates. Build the layer from the current state, replace it, done.
@@ -535,6 +562,14 @@ re-runs that generator. The panel never paints the map itself.
 
 ## Transient UI: build on open, destroy on close
 
+> **Under React (ADR-0002), the framework enforces this for you.** Component **mount** builds
+> the DOM and wires listeners; **unmount** removes the subtree, drops listeners, and runs
+> cleanup (effect teardown) — exactly the "build on open, destroy on close" and "wire on build,
+> not once-forever" discipline below. This is why the review's AR-4 (every editor hand-rolling
+> the same dialog lifecycle) is *obviated* rather than refactored: the lifecycle is the
+> framework's job. The rules below remain the **intent** every chrome component must honor; in
+> the map renderer (no React) they are still enforced by hand.
+
 This is the memory design, and it applies to **every** controller — settings panels most of
 all, because they are large and numerous. The legacy monolith bakes every dialog, panel, and
 list into `index.html` and merely shows/hides them; with big per-entity lists (a row per
@@ -575,6 +610,16 @@ The refactor is explicitly incremental and is already in progress. The project i
 - Step-by-step modernization
 
 Key strategy: old code continues working, while new subsystems adopt cleaner architecture.
+
+**The UI layer specifically is being re-platformed, not hand-finished (ADR-0002).** Because the
+unfinished part of the migration *is* the jQuery UI editor layer, and the lead goal is a UI/UX
+overhaul, that layer is rebuilt on **React** rather than ported to vanilla TS. The same
+incremental discipline applies: the legacy app stays live and shippable on `master` while React
+surfaces are built and merged one at a time behind the `window.X` interop seam, with `.map`
+round-tripping at every step; the seam and jQuery/d3 v5 are removed at cutover. The TS domain
+core (generators, state, io) is preserved throughout. See
+[ADR-0002](docs/adr/adr-0002-ui-replatform-react-webgl.md) and the program plan in
+`docs/prds/backlog/replatform-program.md`.
 
 ---
 
