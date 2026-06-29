@@ -143,4 +143,4 @@ Coverage is used during the burg worker loop to calculate demand effects (boosti
 - [`src/controllers/good-editor.ts`](../../src/controllers/good-editor.ts) — single-good editor: multiplier popups, biome output, demand coverage
 - [`src/controllers/goods-distribution-editor.ts`](../../src/controllers/goods-distribution-editor.ts) — visual builder for a good's `distribution` expression
 - [`docs/domain/production_schema.md`](production_schema.md) — production pipeline in detail
-- [`docs/prd/good-multipliers.md`](../prd/good-multipliers.md) — multiplier design decisions
+- [`docs/prds/finished/good-multipliers.md`](../prds/finished/good-multipliers.md) — multiplier design decisions

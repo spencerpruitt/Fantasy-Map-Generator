@@ -19,7 +19,7 @@
 - `src/types/`: Shared TypeScript interfaces and domain models.
 - `src/utils/`: Generic helper functions.
 - `public/`: Static assets and NON-MIGRATED JS Code in `public/modules`. `public/libs/` holds vendored third-party scripts for legacy code only — new `src/` code imports deps from npm (no `src/libs/`).
-- `docs/`: Domain and architectural documentation. See `docs/architecture/architecture.md` "Project Structure" for the full layout and a "where does my file go?" guide.
+- `docs/`: Domain and architectural documentation. See `ARCHITECTURE.md` "Project Structure" for the full layout and a "where does my file go?" guide.
 - `src/index.html`: **CAUTION**: Currently a 9K-line monolith containing the entire UI structure, SVG `<defs>`, and CSS filters.
 - `tests/e2e/`: Playwright end-to-end tests. Never automatically run Playwright tests when developing.
 
@@ -50,7 +50,7 @@
 
 # AI Agent Instructions
 
-- **Entry Points**: Start by inspecting `docs/architecture.md` and `docs/glossary.md` to align with the domain model.
+- **Entry Points**: Start by inspecting `ARCHITECTURE.md` and `KEYTERMS.md` to align with the domain model.
 - **Refactoring Constraints**: The project is in a gradual JS -> TS migration. Focus on incremental type safety and extracting logic.
 - **File Limits**: `src/index.html` is excessively large. DO NOT try to perform large structural changes to it in a single pass.
 - **Dependencies**: DO NOT introduce new production dependencies without explicit permission. Keep the bundle lightweight.
@@ -71,8 +71,8 @@
 
 # Important Files
 
-- `docs/glossary.md`: Domain vocabulary definitions.
-- `docs/architecture.md`: The guiding blueprint for FMG 2.0.
+- `KEYTERMS.md`: Domain vocabulary definitions.
+- `ARCHITECTURE.md`: The guiding blueprint for FMG 2.0.
 
 # Code Style Rules
 

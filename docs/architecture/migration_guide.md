@@ -2,7 +2,7 @@
 
 How to port a classic, un-bundled module (served as-is from `public/`, leaning on
 runtime globals) into a typed module inside Vite's graph. See also [lazy_loading.md](./lazy_loading.md),
-[architecture.md](./architecture.md), and [data_model.md](./data_model.md).
+[ARCHITECTURE.md](../../ARCHITECTURE.md), and [data_model.md](./data_model.md).
 
 ## Where the file goes
 
@@ -22,7 +22,7 @@ Not everything is Model/View/Controller. If a file is **static content** (a cons
 list, a template table) it goes in `data/`, not `controllers/`. If it manages
 **browser/app lifecycle** (PWA install, auto-update, analytics) it goes in `services/`.
 If it **serializes or persists** state it goes in `io/`. See
-[architecture.md](./architecture.md) "Project Structure" for the full decision guide.
+[ARCHITECTURE.md](../../ARCHITECTURE.md) "Project Structure" for the full decision guide.
 
 ## TypeScript — avoid `any`
 
@@ -114,7 +114,7 @@ The project depends on **d3 `^7.9.0`** with `@types/d3`. Migrate to it.
 ## Canonical module skeletons
 
 Migrate _toward_ clean code. Each
-skeleton below is the shape to aim for — small, explicit, and testable — embodying the principles in [architecture.md](./architecture.md).
+skeleton below is the shape to aim for — small, explicit, and testable — embodying the principles in [ARCHITECTURE.md](../../ARCHITECTURE.md).
 
 The recurring move is **separate the logic from the legacy seam**: write the real work as
 plain exported functions that take their inputs as arguments (so a unit test can call them

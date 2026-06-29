@@ -263,7 +263,7 @@ menu's own module. The remaining **legacy menus**
 `window.bulkBars.mount(type, {redraw})` on open and `window.bulkBars.sync(type)` after each
 row-render. This bridge is a **deliberate, temporary seam**: as each legacy menu is
 migrated to TS it switches to the direct-import path, and the bridge is deleted once all
-are migrated. See `docs/prd/bulk-action-bar.md`.
+are migrated. See `docs/prds/finished/bulk-action-bar.md`.
 
 ## Why no `core/`
 
@@ -467,7 +467,7 @@ that are never released.
 ## Load time
 
 Split rarely-used features into on-demand chunks so the initial bundle stays small — see
-[lazy_loading.md](./lazy_loading.md).
+[lazy_loading.md](docs/architecture/lazy_loading.md).
 
 ## Measure, don't guess
 

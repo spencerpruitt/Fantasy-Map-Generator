@@ -177,7 +177,7 @@ This rebalances pre-existing saves to the new model; users keep their world but 
 
 ### Docs
 
-- `docs/domain/glossary.md` — add Treasury, Sales Tax, Poll Tax entries.
+- `KEYTERMS.md` — add Treasury, Sales Tax, Poll Tax entries.
 - `docs/domain/trade_schema.md` — update sell phase / global redistribution sections; remove "No sales tax on inter-market trade" claim.
 - `docs/architecture/data_model.md` — add `salesTax`, `pollTax`, `treasury` to State; add `tax?` to Deal.
 - `docs/domain/taxes.md` — NEW short domain doc.
