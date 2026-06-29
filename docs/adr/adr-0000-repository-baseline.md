@@ -9,11 +9,15 @@
 **Affected Areas:** entire repository — the shared orientation reference for all future work
 
 > **Read me first.** This ADR is the "you are here" map for the codebase: what the project is,
-> what the stack is, how it boots, and what the major subsystems are. It is deliberately a
-> **living baseline** (see Consequences) — kept current rather than frozen. It does not introduce
-> new structure; it records the current state and points into the deeper docs
-> (`ARCHITECTURE.md`, `KEYTERMS.md`, `docs/architecture/data_model.md`,
-> `docs/domain/generation_pipeline.md`, and the `docs/domain/*` schemas).
+> where the fork is headed, what the stack is, how it boots, and what the major subsystems are.
+> It is a **living quick-reference, not an authoritative spec** — it *will* drift as the code
+> moves, so when it conflicts with the actual files (`package.json`, the `src/` tree, the
+> configs), the code wins, and this ADR should be updated when a structural fact changes. The
+> durable parts are the **fork's direction (§1)** and the **architectural shape** (the layer
+> model, the migration seam, where things live); the version numbers and counts are a snapshot.
+> It points into the deeper docs for detail (`ARCHITECTURE.md`, `KEYTERMS.md`,
+> `docs/architecture/data_model.md`, `docs/domain/generation_pipeline.md`, and the
+> `docs/domain/*` schemas).
 
 ## Context
 
@@ -32,14 +36,36 @@ point ties **tech stack + runtime flow + subsystem map** together. ADR-0000 is t
 
 Record the following as the canonical baseline. Future ADRs amend specific parts of it.
 
-### 1. What the project is
+### 1. What the project is — and where it's going
 
-- **Purpose:** procedural generation, editing, and visualization of fantasy maps for writers,
-  game masters, and cartographers.
+This project is a **fork of Azgaar's Fantasy Map Generator being evolved into a full
+worldbuilding tool**. Its intent goes well beyond upstream FMG and will require substantive
+refactors and wholesale new features. The **north-star goals** (the durable "why" behind most
+decisions):
+
+1. **Temporal dimension & save-states** — move beyond a single static snapshot to worlds
+   explorable across *time*: cultures, states, and borders evolving on a timeline, with
+   explorable save-states.
+2. **Multi-map globes** — natively stitch multiple maps onto one globe/project, and compose
+   multiple `.map` projects together.
+3. **Performance** — stay fast and memory-bounded on large worlds (an architectural constraint,
+   not polish).
+4. **UI/UX** — improve the editing and exploration experience.
+
+When weighing a change, favor the direction these goals imply. Two of them directly challenge
+load-bearing assumptions in today's code: goal 1 strains the **single-snapshot `.map` model**
+(§8) and goal 2 strains the **single-`pack`/`grid` world** (§4). Expect those to evolve — treat
+the current-state facts below as the starting point, not a fixed contract.
+
+Current-state facts:
+
+- **Purpose today:** procedural generation, editing, and visualization of fantasy maps for
+  writers, game masters, and cartographers.
 - **Runs entirely in the browser** — no server does the heavy lifting — on maps of up to
   hundreds of thousands of cells. Speed and a low memory footprint are therefore *architectural
   constraints*, not polish (see `ARCHITECTURE.md` → Performance & Resource Discipline).
-- **Single serializable world.** All map state must round-trip losslessly into one `.map` file.
+- **Single serializable world (today).** All map state currently round-trips losslessly into one
+  `.map` file — a model goal 1 will extend toward time-indexed save-states.
 
 ### 2. Tech stack & tooling
 

@@ -1,6 +1,6 @@
 # ADR-0001: Adopt the root documentation schema
 
-**Status:** Proposed
+**Status:** Accepted
 
 **Date:** 2026-06-28
 
