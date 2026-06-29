@@ -54,6 +54,18 @@ This glossary covers core terminology, data structures, and concepts used throug
 - **Note**: User-defined text attached to a specific map entity (cell, burg, state) containing custom lore or description.
 - **Icon**: A small graphic representing a good, biome, or feature.
 
+## Migration & Architecture
+
+_Vocabulary for the UI re-platform direction set in [ADR-0002](docs/adr/adr-0002-ui-replatform-react-webgl.md)._
+
+- **Domain core**: The stack-independent, TS-migrated heart of the app preserved across the re-platform — `src/generators/` (Generators), the world State (`pack`/`grid`), and `src/io/` (serialization). The asset to keep; the jQuery UI shell is the liability to retire.
+- **UI chrome**: The non-map interface React owns — panels, editors, dialogs, toolbars, lists. Distinct from the **map**, which the Renderer owns. React renders chrome only; rendering map cells as React components is forbidden.
+- **Re-platform**: Rebuilding the UI layer on a new stack (React) rather than hand-finishing it in vanilla TS. The chosen migration direction (full-replacement end-state, executed via incremental merged slices).
+- **Cutover**: The single switch from the legacy UI to the fully-rebuilt React UI, performed once the new stack reaches feature parity. Until cutover, the legacy app stays live and shippable on `master`.
+- **Hybrid renderer**: The target renderer architecture — WebGL/canvas draws the dense layers (cell fills, terrain, heightmap); an **SVG/HTML overlay** draws labels, vector paths (coastlines, rivers, borders), filters, and click-targets. Avoids rebuilding text/vector rendering as shaders.
+- **`window.X` bridge**: The deliberate, temporary interop seam by which bundled ES modules (`src/`) and un-bundled legacy scripts (`public/**/*.js`, which cannot `import`) communicate via ~150+ `window.X` global registrations (`window.Burgs`, `window.COA`, `window.bulkBars`, …). Carries the dual-UI transition period and is removed at cutover.
+- **`.map` serialization contract**: The exact serialized shape of a `.map` file — a positional array of ~46 fields joined by `\r\n`. Saving must round-trip identically on load. AR-1 consolidates this contract into one named-field schema module (a naming layer; positions are **not** renumbered, so existing files stay compatible).
+
 ## UI & User Interaction
 
 - **Editor Tool**: Any interactive UI for editing map features (e.g., rivers-editor, provinces-editor).
