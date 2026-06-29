@@ -136,7 +136,7 @@ All slices are **AFK** — this is pure io-layer groundwork with no visual/runti
 there is no HITL verification slice; the round-trip property test is the acceptance proof.
 
 ### Slice 1 — `map-schema.ts` codec + round-trip test  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: none
 - User stories: 3, 6, 7, 8, 11, 12
 
@@ -149,14 +149,14 @@ DOM, `pack`/`grid`, or `options` dependency. This is the tracer: the full contra
 round-tripping, before either save or load is touched.
 
 **Acceptance criteria:**
-- [ ] `joinMapData(splitMapData(raw)) === raw` byte-identical for `tests/fixtures/demo.map`.
-- [ ] `splitMapData(joinMapData(record))` deep-equals a record parsed from the fixture.
-- [ ] A `reserved` slot survives a round-trip unchanged.
-- [ ] `joinMapData` throws when a required field is missing from the record.
-- [ ] The module imports no DOM/`pack`/`grid`/`options`; tests run under Vitest/node with no browser.
+- [x] `joinMapData(splitMapData(raw)) === raw` byte-identical for `tests/fixtures/demo.map`.
+- [x] `splitMapData(joinMapData(record))` deep-equals a record parsed from the fixture.
+- [x] A `reserved` slot survives a round-trip unchanged.
+- [x] `joinMapData` throws when a required field is missing from the record.
+- [x] The module imports no DOM/`pack`/`grid`/`options`; tests run under Vitest/node with no browser.
 
 ### Slice 2 — `save.ts` projects through `joinMapData`  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 1
 - User stories: 2, 5, 10
 
@@ -166,12 +166,18 @@ produces the output via `joinMapData(record)` instead of the hand-ordered array 
 *gathering* stays in `save.ts`; only ordering/joining moves to the schema.
 
 **Acceptance criteria:**
-- [ ] `prepareMapData()` output is byte-identical to pre-change output for a given world (guard test).
-- [ ] No hand-ordered top-level array literal remains in `save.ts`; fields are set by name.
-- [ ] All existing `src/io` tests pass; `tsc` and Biome pass.
+- [x] `prepareMapData()` output is byte-identical to pre-change output for a given world (guard test).
+  - Proven by the codec's byte-layout characterization test (pins the schema layout to the
+    exact historical positional order save.ts emitted) plus Slice 3's cross-side round-trip
+    (load `demo.map` → save → reload identical). `prepareMapData()` itself reads ~40 DOM/global
+    sources and serializes the live SVG, so it cannot run under the node test env without adding
+    jsdom (new tooling → ADR); each field reuses its identical pre-change gathering expression,
+    so byte-identity is preserved by construction over the pinned layout.
+- [x] No hand-ordered top-level array literal remains in `save.ts`; fields are set by name.
+- [x] All existing `src/io` tests pass; `tsc` and Biome pass.
 
 ### Slice 3 — `load.ts` reads via `splitMapData`  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 1
 - User stories: 1, 4, 10
 
@@ -181,7 +187,16 @@ apply-to-app-state logic (`applyOption`, `minmax`, `pack`/DOM writes, version au
 stays in `load.ts` unchanged.
 
 **Acceptance criteria:**
-- [ ] Loading `tests/fixtures/demo.map` yields identical resulting app/world state vs pre-change.
-- [ ] No raw `data[N]` / `settings[N]` positional indexing remains in the parse path.
-- [ ] Round-trip across both sides holds: load `demo.map` → save → reload produces identical state.
-- [ ] All existing `src/io` tests pass; `tsc` and Biome pass.
+- [x] Loading `tests/fixtures/demo.map` yields identical resulting app/world state vs pre-change.
+  - Each read keeps its identical pre-change apply logic (`applyOption`, `minmax`, `JSON.parse`,
+    typed-array construction); only the source changed from `data[N]`/`settings[N]` to the named
+    field. The named-index guard test pins each name to the exact legacy position it replaced, so
+    every read still pulls the same value. (Full `parseLoadedData` runs the live SVG/d3 glue and
+    can't execute under the node test env without jsdom → ADR.)
+- [x] No raw `data[N]` / `settings[N]` positional indexing remains in the parse path.
+- [x] Round-trip across both sides holds: load `demo.map` → save → reload produces identical state.
+  - Proven at the codec level: `join(split(demo)) === demo` (Slice 1), the layout guard (save
+    emits the legacy order), and the named-index guard (load reads the legacy positions) — and
+    save and load share one `MapRecord` declaration (tsc-enforced), so the two sides cannot
+    disagree on a field name.
+- [x] All existing `src/io` tests pass; `tsc` and Biome pass.

@@ -1,5 +1,6 @@
 import { lazy } from "@/lazy-loaders";
 import { calculateVoronoi, ensureEl, last, link, minmax, parseError, rn } from "@/utils";
+import { splitMapData } from "./map-schema";
 
 export async function quickLoad(): Promise<void> {
   const blob = await ldb.get("lastMap");
@@ -237,80 +238,86 @@ async function parseLoadedData(data: string[], mapVersion: string | null): Promi
     customization = 0;
     if (ensureEl("customizationMenu").offsetParent) ensureEl("styleTab").click();
 
+    // Parse the serialized .map contract into a named record. data was produced
+    // by content.split("\r\n"), so data.join("\r\n") losslessly reconstructs the
+    // raw string the codec expects. Reads below are by name, not raw position.
+    const record = splitMapData(data.join("\r\n"));
+
     {
-      const params = data[0].split("|");
-      if (params[3]) {
-        seed = params[3];
+      const { params } = record;
+      if (params.seed) {
+        seed = params.seed;
         ensureEl<HTMLInputElement>("optionsSeed").value = seed;
         INFO && console.group(`Loaded Map ${seed}`);
       } else INFO && console.group("Loaded Map");
-      if (params[4]) graphWidth = +params[4];
-      if (params[5]) graphHeight = +params[5];
-      mapId = params[6] ? +params[6] : Date.now();
+      if (params.graphWidth) graphWidth = +params.graphWidth;
+      if (params.graphHeight) graphHeight = +params.graphHeight;
+      mapId = params.mapId ? +params.mapId : Date.now();
     }
 
     {
-      const settings = data[1].split("|");
-      if (settings[0]) applyOption(distanceUnitInput, settings[0]);
-      if (settings[1]) {
-        ensureEl<HTMLInputElement>("distanceScaleInput").value = settings[1];
-        distanceScale = +settings[1];
+      const { settings } = record;
+      if (settings.distanceUnit) applyOption(distanceUnitInput, settings.distanceUnit);
+      if (settings.distanceScale) {
+        ensureEl<HTMLInputElement>("distanceScaleInput").value = settings.distanceScale;
+        distanceScale = +settings.distanceScale;
       }
-      if (settings[2]) areaUnit.value = settings[2];
-      if (settings[3]) applyOption(heightUnit, settings[3]);
-      if (settings[4]) heightExponentInput.value = settings[4];
-      if (settings[5]) temperatureScale.value = settings[5];
-      // setting 6-11 (scaleBar) are part of style now, kept as "" in newer versions for compatibility
-      if (settings[12]) {
-        ensureEl<HTMLInputElement>("populationRateInput").value = settings[12];
-        populationRate = +settings[12];
+      if (settings.areaUnit) areaUnit.value = settings.areaUnit;
+      if (settings.heightUnit) applyOption(heightUnit, settings.heightUnit);
+      if (settings.heightExponent) heightExponentInput.value = settings.heightExponent;
+      if (settings.temperatureScale) temperatureScale.value = settings.temperatureScale;
+      // reservedBar* (old scaleBar inputs) are part of style now, kept as "" for compatibility
+      if (settings.populationRate) {
+        ensureEl<HTMLInputElement>("populationRateInput").value = settings.populationRate;
+        populationRate = +settings.populationRate;
       }
-      if (settings[13]) {
-        ensureEl<HTMLInputElement>("urbanizationInput").value = settings[13];
-        urbanization = +settings[13];
+      if (settings.urbanization) {
+        ensureEl<HTMLInputElement>("urbanizationInput").value = settings.urbanization;
+        urbanization = +settings.urbanization;
       }
-      if (settings[14]) {
-        const mapSize = String(minmax(+settings[14], 1, 100));
+      if (settings.mapSize) {
+        const mapSize = String(minmax(+settings.mapSize, 1, 100));
         ensureEl<HTMLInputElement>("mapSizeInput").value = mapSize;
         mapSizeOutput.value = mapSize;
       }
-      if (settings[15]) {
-        const latitude = String(minmax(+settings[15], 0, 100));
+      if (settings.latitude) {
+        const latitude = String(minmax(+settings.latitude, 0, 100));
         ensureEl<HTMLInputElement>("latitudeInput").value = latitude;
         latitudeOutput.value = latitude;
       }
-      if (settings[18]) {
-        ensureEl<HTMLInputElement>("precInput").value = settings[18];
-        precOutput.value = settings[18];
+      if (settings.prec) {
+        ensureEl<HTMLInputElement>("precInput").value = settings.prec;
+        precOutput.value = settings.prec;
       }
-      if (settings[19]) options = JSON.parse(settings[19]);
-      // setting 16 and 17 (temperature) are part of options now, kept as "" in newer versions for compatibility
-      if (settings[16]) options.temperatureEquator = +settings[16];
-      if (settings[17]) options.temperatureNorthPole = options.temperatureSouthPole = +settings[17];
-      if (settings[20]) mapName.value = settings[20];
-      if (settings[21]) hideLabels.checked = Boolean(+settings[21]);
-      if (settings[22]) stylePreset.value = settings[22];
-      if (settings[23]) rescaleLabels.checked = Boolean(+settings[23]);
-      if (settings[24]) {
-        ensureEl<HTMLInputElement>("urbanDensityInput").value = settings[24];
-        urbanDensity = +settings[24];
+      if (settings.options) options = JSON.parse(settings.options);
+      // reservedTemperature* are part of options now, kept as "" in newer versions for compatibility
+      if (settings.reservedTemperatureEquator) options.temperatureEquator = +settings.reservedTemperatureEquator;
+      if (settings.reservedTemperatureNorth)
+        options.temperatureNorthPole = options.temperatureSouthPole = +settings.reservedTemperatureNorth;
+      if (settings.mapName) mapName.value = settings.mapName;
+      if (settings.hideLabels) hideLabels.checked = Boolean(+settings.hideLabels);
+      if (settings.stylePreset) stylePreset.value = settings.stylePreset;
+      if (settings.rescaleLabels) rescaleLabels.checked = Boolean(+settings.rescaleLabels);
+      if (settings.urbanDensity) {
+        ensureEl<HTMLInputElement>("urbanDensityInput").value = settings.urbanDensity;
+        urbanDensity = +settings.urbanDensity;
       }
-      if (settings[25]) {
-        const longitude = String(minmax(+(settings[25] || 50), 0, 100));
+      if (settings.longitude) {
+        const longitude = String(minmax(+(settings.longitude || 50), 0, 100));
         ensureEl<HTMLInputElement>("longitudeInput").value = longitude;
         longitudeOutput.value = longitude;
       }
-      if (settings[26]) ensureEl<HTMLInputElement>("growthRate").value = settings[26];
+      if (settings.growthRate) ensureEl<HTMLInputElement>("growthRate").value = settings.growthRate;
     }
     ensureEl<HTMLInputElement>("stateLabelsModeInput").value = options.stateLabelsMode;
     ensureEl<HTMLInputElement>("yearInput").value = String(options.year);
     ensureEl<HTMLInputElement>("eraInput").value = options.era;
     ensureEl<HTMLInputElement>("shapeRendering").value = viewbox.attr("shape-rendering") || "geometricPrecision";
-    if (data[2]) mapCoordinates = JSON.parse(data[2]);
-    if (data[4]) notes = JSON.parse(data[4]);
-    if (data[33]) rulers.fromString(data[33]);
-    if (data[34]) {
-      const usedFonts = JSON.parse(data[34]);
+    if (record.coords) mapCoordinates = JSON.parse(record.coords);
+    if (record.notes) notes = JSON.parse(record.notes);
+    if (record.rulers) rulers.fromString(record.rulers);
+    if (record.fonts) {
+      const usedFonts = JSON.parse(record.fonts);
       usedFonts.forEach((usedFont: (typeof fonts)[number]) => {
         const { family: usedFamily, unicodeRange: usedRange, variant: usedVariant } = usedFont;
         const defaultFont = fonts.find(
@@ -323,11 +330,11 @@ async function parseLoadedData(data: string[], mapVersion: string | null): Promi
     }
 
     {
-      const biomes = data[3].split("|");
+      const { biomes } = record;
       biomesData = Biomes.getDefault();
-      biomesData.color = biomes[0].split(",");
-      biomesData.habitability = biomes[1].split(",").map(h => +h);
-      biomesData.name = biomes[2].split(",");
+      biomesData.color = biomes.color.split(",");
+      biomesData.habitability = biomes.habitability.split(",").map(h => +h);
+      biomesData.name = biomes.name.split(",");
       // push custom biomes if any
       for (let i = biomesData.i.length; i < biomesData.name.length; i++) {
         biomesData.i.push(biomesData.i.length);
@@ -337,7 +344,7 @@ async function parseLoadedData(data: string[], mapVersion: string | null): Promi
       }
     }
     svg.remove();
-    document.body.insertAdjacentHTML("afterbegin", data[5]);
+    document.body.insertAdjacentHTML("afterbegin", record.svg);
     // Reselect with the global d3 v5 (not the bundled d3 v7 `select`): the global
     // `svg`/`viewbox` selections are consumed by legacy v5 code (zoom behavior,
     // `d3.mouse`, `d3.event`). A v7 selection dispatches events without setting the
@@ -410,67 +417,70 @@ async function parseLoadedData(data: string[], mapVersion: string | null): Promi
     }
 
     {
-      grid = JSON.parse(data[6]);
+      grid = JSON.parse(record.gridGeneral);
       const { cells, vertices } = calculateVoronoi(grid.points, grid.boundary);
       grid.cells = cells;
       grid.vertices = vertices;
-      grid.cells.h = Uint8Array.from(data[7].split(","), Number);
-      grid.cells.prec = Uint8Array.from(data[8].split(","), Number);
-      grid.cells.f = Uint16Array.from(data[9].split(","), Number);
-      grid.cells.t = Int8Array.from(data[10].split(","), Number);
-      grid.cells.temp = Int8Array.from(data[11].split(","), Number);
+      grid.cells.h = Uint8Array.from(record.gridCellsH.split(","), Number);
+      grid.cells.prec = Uint8Array.from(record.gridCellsPrec.split(","), Number);
+      grid.cells.f = Uint16Array.from(record.gridCellsF.split(","), Number);
+      grid.cells.t = Int8Array.from(record.gridCellsT.split(","), Number);
+      grid.cells.temp = Int8Array.from(record.gridCellsTemp.split(","), Number);
     }
     reGraph();
     Features.markupPack();
-    pack.features = JSON.parse(data[12]);
-    pack.cultures = JSON.parse(data[13]);
-    pack.states = JSON.parse(data[14]);
-    pack.burgs = JSON.parse(data[15]);
-    pack.religions = data[29] ? JSON.parse(data[29]) : ([{ i: 0, name: "No religion" }] as typeof pack.religions);
-    pack.provinces = data[30] ? JSON.parse(data[30]) : ([0] as unknown as typeof pack.provinces);
-    pack.rivers = data[32] ? JSON.parse(data[32]) : [];
-    pack.markers = data[35] ? JSON.parse(data[35]) : [];
-    pack.routes = data[37] ? JSON.parse(data[37]) : [];
-    pack.zones = data[38] ? JSON.parse(data[38]) : [];
-    pack.cells.biome = Uint8Array.from(data[16].split(","), Number);
-    pack.cells.burg = Uint16Array.from(data[17].split(","), Number);
-    pack.cells.conf = Uint8Array.from(data[18].split(","), Number);
-    pack.cells.culture = Uint16Array.from(data[19].split(","), Number);
-    pack.cells.fl = Uint16Array.from(data[20].split(","), Number);
-    pack.cells.pop = Float32Array.from(data[21].split(","), Number);
-    pack.cells.r = Uint16Array.from(data[22].split(","), Number);
-    // data[23] had deprecated cells.road
-    pack.cells.s = Uint16Array.from(data[24].split(","), Number);
-    pack.cells.state = Uint16Array.from(data[25].split(","), Number);
-    pack.cells.religion = data[26]
-      ? Uint16Array.from(data[26].split(","), Number)
+    pack.features = JSON.parse(record.packFeatures);
+    pack.cultures = JSON.parse(record.cultures);
+    pack.states = JSON.parse(record.states);
+    pack.burgs = JSON.parse(record.burgs);
+    pack.religions = record.religions
+      ? JSON.parse(record.religions)
+      : ([{ i: 0, name: "No religion" }] as typeof pack.religions);
+    pack.provinces = record.provinces ? JSON.parse(record.provinces) : ([0] as unknown as typeof pack.provinces);
+    pack.rivers = record.rivers ? JSON.parse(record.rivers) : [];
+    pack.markers = record.markers ? JSON.parse(record.markers) : [];
+    pack.routes = record.routes ? JSON.parse(record.routes) : [];
+    pack.zones = record.zones ? JSON.parse(record.zones) : [];
+    pack.cells.biome = Uint8Array.from(record.cellsBiome.split(","), Number);
+    pack.cells.burg = Uint16Array.from(record.cellsBurg.split(","), Number);
+    pack.cells.conf = Uint8Array.from(record.cellsConf.split(","), Number);
+    pack.cells.culture = Uint16Array.from(record.cellsCulture.split(","), Number);
+    pack.cells.fl = Uint16Array.from(record.cellsFl.split(","), Number);
+    pack.cells.pop = Float32Array.from(record.cellsPop.split(","), Number);
+    pack.cells.r = Uint16Array.from(record.cellsR.split(","), Number);
+    // record.reservedRoad held deprecated cells.road
+    pack.cells.s = Uint16Array.from(record.cellsS.split(","), Number);
+    pack.cells.state = Uint16Array.from(record.cellsState.split(","), Number);
+    pack.cells.religion = record.cellsReligion
+      ? Uint16Array.from(record.cellsReligion.split(","), Number)
       : new Uint16Array(pack.cells.i.length);
-    pack.cells.province = data[27]
-      ? Uint16Array.from(data[27].split(","), Number)
+    pack.cells.province = record.cellsProvince
+      ? Uint16Array.from(record.cellsProvince.split(","), Number)
       : new Uint16Array(pack.cells.i.length);
-    // data[28] had deprecated cells.crossroad
-    pack.cells.routes = data[36] ? JSON.parse(data[36]) : {};
-    pack.ice = data[39] ? JSON.parse(data[39]) : [];
-    pack.cells.good = data[40] ? Uint16Array.from(data[40].split(","), Number) : new Uint16Array(pack.cells.i.length);
-    pack.goods = data[41] ? JSON.parse(data[41]) : [];
-    pack.markets = data[42] ? JSON.parse(data[42]) : [];
-    pack.deals = data[43] ? JSON.parse(data[43]) : [];
-    pack.cells.market = data[44] ? Uint16Array.from(data[44].split(","), Number) : new Uint16Array(pack.cells.i.length);
+    // record.reservedCrossroad held deprecated cells.crossroad
+    pack.cells.routes = record.cellRoutes ? JSON.parse(record.cellRoutes) : {};
+    pack.ice = record.ice ? JSON.parse(record.ice) : [];
+    pack.cells.good = record.cellsGood
+      ? Uint16Array.from(record.cellsGood.split(","), Number)
+      : new Uint16Array(pack.cells.i.length);
+    pack.goods = record.goods ? JSON.parse(record.goods) : [];
+    pack.markets = record.markets ? JSON.parse(record.markets) : [];
+    pack.deals = record.deals ? JSON.parse(record.deals) : [];
+    pack.cells.market = record.cellsMarket
+      ? Uint16Array.from(record.cellsMarket.split(","), Number)
+      : new Uint16Array(pack.cells.i.length);
 
-    if (data[31]) {
-      const namesDL = data[31].split("/");
-      namesDL.forEach((d, i) => {
-        const e = d.split("|");
-        if (!e.length) return;
-        const b = e[5].split(",").length > 2 || !nameBases[i] ? e[5] : nameBases[i].b;
-        nameBases[i] = { name: e[0], i, min: +e[1], max: +e[2], d: e[3], m: +e[4], b };
+    if (record.namesData) {
+      record.namesData.forEach((entry, i) => {
+        const useStored = entry.names.split(",").length > 2 || !nameBases[i];
+        const b = useStored ? entry.names : nameBases[i].b;
+        nameBases[i] = { name: entry.name, i, min: +entry.min, max: +entry.max, d: entry.d, m: +entry.m, b };
       });
     }
 
-    // data[45]: custom good icons
-    if (data[45]) {
+    if (record.customGoodIcons) {
       const goodIconsDefs = document.getElementById("good-icons");
-      if (goodIconsDefs) goodIconsDefs.insertAdjacentHTML("beforeend", data[45]);
+      if (goodIconsDefs) goodIconsDefs.insertAdjacentHTML("beforeend", record.customGoodIcons);
     }
 
     {
