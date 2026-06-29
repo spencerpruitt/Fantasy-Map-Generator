@@ -9,4 +9,4 @@ This project began as Azgaar's Fantasy Map Generator (a browser app for procedur
 
 When weighing a change, favor the direction these goals imply; expect the architecture to move toward them. Several touch load-bearing assumptions in today's code (the single-snapshot `.map` model, the single-`pack` world), so substantive refactors are anticipated, not avoided.
 
-Before making architectural decisions, read `docs/context.md` (project overview) and `docs/adr/adr-0000-repository-baseline.md` (a quick map of the stack and subsystems). For deeper knowledge, consult `ARCHITECTURE.md` (the FMG 2.0 target architecture), `KEYTERMS.md` (domain vocabulary), `docs/architecture/data_model.md`, and the decision records in `docs/adr/`.
+Before making architectural decisions, read `docs/context.md` (project overview) and `docs/architecture/original-architecture.md` (a quick map of the current stack and subsystems — the baseline this fork starts from). For deeper knowledge, consult `ARCHITECTURE.md` (the FMG 2.0 target architecture), `KEYTERMS.md` (domain vocabulary), `docs/architecture/data_model.md`, and the decision records in `docs/adr/`.

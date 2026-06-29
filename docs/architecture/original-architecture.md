@@ -1,25 +1,25 @@
-# ADR-0000: Repository baseline — architecture, tech stack, and major subsystems
+# Original Architecture
 
-**Status:** Proposed
+_A current-state baseline of the codebase at the start of the worldbuilding-tool work: the tech
+stack, the layer model, how the app boots, and the major subsystems. This captures the
+**original** architecture inherited from upstream FMG — the starting point against which the
+fork's planned changes (see `AGENTS.md`) are measured. It is **not** a decision record; for the
+**target** architecture see `ARCHITECTURE.md`, and for domain vocabulary see `KEYTERMS.md`._
 
-**Date:** 2026-06-28
+**Last updated:** 2026-06-28
 
-**Category:** Architecture
-
-**Affected Areas:** entire repository — the shared orientation reference for all future work
-
-> **Read me first.** This ADR is the "you are here" map for the codebase: what the project is,
+> **How to read this.** It's the "you are here" map for the codebase — what the project is,
 > where the fork is headed, what the stack is, how it boots, and what the major subsystems are.
 > It is a **living quick-reference, not an authoritative spec** — it *will* drift as the code
 > moves, so when it conflicts with the actual files (`package.json`, the `src/` tree, the
-> configs), the code wins, and this ADR should be updated when a structural fact changes. The
+> configs), the code wins, and this doc should be updated when a structural fact changes. The
 > durable parts are the **fork's direction (§1)** and the **architectural shape** (the layer
 > model, the migration seam, where things live); the version numbers and counts are a snapshot.
-> It points into the deeper docs for detail (`ARCHITECTURE.md`, `KEYTERMS.md`,
+> For detail it points into the deeper docs (`ARCHITECTURE.md`, `KEYTERMS.md`,
 > `docs/architecture/data_model.md`, `docs/domain/generation_pipeline.md`, and the
 > `docs/domain/*` schemas).
 
-## Context
+## Why this doc exists
 
 This repository is a fork of Azgaar's **Fantasy Map Generator (FMG)** — a browser app that
 procedurally generates, edits, and visualizes fantasy maps (terrain, climate, rivers, cultures,
@@ -30,11 +30,9 @@ The codebase is large (~52k lines of TypeScript under `src/`, plus a ~9k-line `s
 monolith and a shrinking body of legacy JavaScript under `public/`). New contributors and AI
 agents repeatedly pay an orientation tax: reverse-engineering the stack, the boot sequence, and
 the subsystem map before they can make a safe change. The deep docs exist but no single entry
-point ties **tech stack + runtime flow + subsystem map** together. ADR-0000 is that entry point.
+point ties **tech stack + runtime flow + subsystem map** together. This doc is that entry point.
 
-## Decision
-
-Record the following as the canonical baseline. Future ADRs amend specific parts of it.
+## Baseline
 
 ### 1. What the project is — and where it's going
 
@@ -267,24 +265,13 @@ a general-purpose namespace.
 - Deep architecture rationale → `ARCHITECTURE.md`; domain vocabulary → `KEYTERMS.md`;
   decisions → `docs/adr/`; specs/PRDs → `docs/prds/`.
 
-## Alternatives Considered
+## Keeping this current
 
-| Alternative | Pros | Cons |
-|---|---|---|
-| (A) A single living baseline ADR-0000 with pointers into deep docs (chosen) | One canonical orientation entry; consolidates stack + runtime + subsystem map; doesn't duplicate the deep docs | Must be actively maintained or it goes stale; bends the usual "immutable, one-decision" ADR shape |
-| (B) Fold the baseline into `ARCHITECTURE.md` | No new file | Mixes a *current-state snapshot* with the *target blueprint*; bloats an already-large doc |
-| (C) No baseline doc; rely on the scattered deep docs | Zero maintenance | Agents keep re-deriving the stack/boot/subsystem map — the exact orientation tax this removes |
-
-## Consequences
-
-- **This ADR is a living exception to ADR immutability.** Normal ADRs are frozen once accepted;
-  ADR-0000 is the shared baseline and must be *updated* as the architecture moves. The trigger:
-  whenever a later ADR changes a structural fact recorded here, update the relevant section of
-  ADR-0000 in the same change and link the amending ADR. A stale baseline is worse than none.
-- It **complements, not duplicates** `ARCHITECTURE.md` (target blueprint), `KEYTERMS.md`
+- **This is a living doc, not a frozen record.** When a later change alters a structural fact
+  recorded here, update the relevant section in the same change. It is explicitly _not_ an ADR,
+  so it carries no immutability or approval ceremony — but a stale baseline is worse than none.
+- It **complements, not duplicates** `ARCHITECTURE.md` (the target blueprint), `KEYTERMS.md`
   (vocabulary), and `docs/architecture/data_model.md` (data spec): those remain the source of
-  truth for their domains; ADR-0000 links to them.
-- Onboarding cost for new contributors/agents drops: one read establishes the lay of the land.
-- No source code, `.map` format, or version impact (documentation only).
+  truth for their domains; this doc links to them.
 - Counts and versions herein are approximate snapshots as of the date above; treat the cited
   files (`package.json`, `tsconfig.json`, the `src/` tree) as authoritative when they disagree.

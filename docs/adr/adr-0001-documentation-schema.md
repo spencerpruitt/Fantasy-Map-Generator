@@ -45,7 +45,7 @@ docs to root rather than duplicating them, and by restructuring the PRD lifecycl
 - **Restructure PRDs:** create `docs/prds/{backlog,in-progress,finished}` and move all five
   existing PRDs into `docs/prds/finished/` (they document shipped features). Remove the singular
   `docs/prd/`. Empty lifecycle folders are kept tracked with `.gitkeep`.
-- **Create `docs/adr/`** for Architecture Decision Records (this ADR and ADR-0000 are the first).
+- **Create `docs/adr/`** for Architecture Decision Records (this ADR is the first).
 - **Relocate the non-schema root docs** rather than delete them:
   `CONTEXT.md` → `docs/context.md` (a project-overview doc, so it belongs under `docs/`), and
   `CODE_OF_CONDUCT.md` → `.github/CODE_OF_CONDUCT.md` (GitHub recognizes it there, alongside the
@@ -73,7 +73,9 @@ docs to root rather than duplicating them, and by restructuring the PRD lifecycl
 - Future PRDs follow the `backlog → in-progress → finished` lifecycle; the `/slice-prd`,
   `/to-prd`, and review workflows can rely on it.
 - ADRs now have a home (`docs/adr/`) and a numbering convention
-  (`adr-NNNN-kebab-title.md`); this ADR and ADR-0000 establish the format.
+  (`adr-NNNN-kebab-title.md`); this ADR establishes the format. The current-state baseline that
+  was first drafted as "ADR-0000" now lives as `docs/architecture/original-architecture.md` — it
+  is a living reference, not a decision, so it does not belong in `docs/adr/`.
 - All doc cross-references were updated; a repo-wide grep confirms no dangling links to the old
   paths.
 - Documentation-only change: no source code, `.map` format, or version impact.
