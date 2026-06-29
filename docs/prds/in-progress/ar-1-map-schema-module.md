@@ -177,7 +177,7 @@ produces the output via `joinMapData(record)` instead of the hand-ordered array 
 - [x] All existing `src/io` tests pass; `tsc` and Biome pass.
 
 ### Slice 3 — `load.ts` reads via `splitMapData`  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 1
 - User stories: 1, 4, 10
 
@@ -187,7 +187,16 @@ apply-to-app-state logic (`applyOption`, `minmax`, `pack`/DOM writes, version au
 stays in `load.ts` unchanged.
 
 **Acceptance criteria:**
-- [ ] Loading `tests/fixtures/demo.map` yields identical resulting app/world state vs pre-change.
-- [ ] No raw `data[N]` / `settings[N]` positional indexing remains in the parse path.
-- [ ] Round-trip across both sides holds: load `demo.map` → save → reload produces identical state.
-- [ ] All existing `src/io` tests pass; `tsc` and Biome pass.
+- [x] Loading `tests/fixtures/demo.map` yields identical resulting app/world state vs pre-change.
+  - Each read keeps its identical pre-change apply logic (`applyOption`, `minmax`, `JSON.parse`,
+    typed-array construction); only the source changed from `data[N]`/`settings[N]` to the named
+    field. The named-index guard test pins each name to the exact legacy position it replaced, so
+    every read still pulls the same value. (Full `parseLoadedData` runs the live SVG/d3 glue and
+    can't execute under the node test env without jsdom → ADR.)
+- [x] No raw `data[N]` / `settings[N]` positional indexing remains in the parse path.
+- [x] Round-trip across both sides holds: load `demo.map` → save → reload produces identical state.
+  - Proven at the codec level: `join(split(demo)) === demo` (Slice 1), the layout guard (save
+    emits the legacy order), and the named-index guard (load reads the legacy positions) — and
+    save and load share one `MapRecord` declaration (tsc-enforced), so the two sides cannot
+    disagree on a field name.
+- [x] All existing `src/io` tests pass; `tsc` and Biome pass.

@@ -196,3 +196,48 @@ describe("map-schema byte layout matches the historical .map positional order", 
     expect(joinMapData(record)).toBe(legacyLayout);
   });
 });
+
+// Slice 3 guard: load.ts now reads named fields (record.rulers) instead of raw
+// positions (data[33]). This pins each named field to the exact historical
+// index/sub-index load.ts used to read, so a schema reorder that desynced the
+// names from the legacy positions still fails CI.
+describe("map-schema named fields map to the historical load indices", () => {
+  const record = splitMapData(rawFixture);
+  const parts = rawFixture.split("\r\n");
+  const params = parts[0].split("|");
+  const settings = parts[1].split("|");
+  const biomes = parts[3].split("|");
+
+  it("maps the compound params/settings/biomes sub-fields to their legacy indices", () => {
+    expect(record.params.seed).toBe(params[3]);
+    expect(record.params.graphWidth).toBe(params[4]);
+    expect(record.params.mapId).toBe(params[6]);
+
+    expect(record.settings.distanceUnit).toBe(settings[0]);
+    expect(record.settings.options).toBe(settings[19]);
+    expect(record.settings.urbanDensity).toBe(settings[24]);
+    expect(record.settings.growthRate).toBe(settings[26]);
+
+    expect(record.biomes.color).toBe(biomes[0]);
+    expect(record.biomes.name).toBe(biomes[2]);
+  });
+
+  it("maps the plain top-level fields to their legacy data[N] positions", () => {
+    expect(record.coords).toBe(parts[2]);
+    expect(record.notes).toBe(parts[4]);
+    expect(record.svg).toBe(parts[5]);
+    expect(record.cellsState).toBe(parts[25]);
+    expect(record.reservedRoad).toBe(parts[23]);
+    expect(record.rulers).toBe(parts[33]);
+    expect(record.fonts).toBe(parts[34]);
+    expect(record.ice).toBe(parts[39]);
+  });
+
+  it("maps the namesData entries to the legacy /- and |-split positions", () => {
+    const firstLegacy = parts[31].split("/")[0].split("|");
+    expect(record.namesData[0].name).toBe(firstLegacy[0]);
+    expect(record.namesData[0].min).toBe(firstLegacy[1]);
+    expect(record.namesData[0].names).toBe(firstLegacy[5]);
+    expect(record.namesData).toHaveLength(parts[31].split("/").length);
+  });
+});
