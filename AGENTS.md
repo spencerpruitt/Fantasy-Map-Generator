@@ -10,3 +10,7 @@ This project began as Azgaar's Fantasy Map Generator (a browser app for procedur
 When weighing a change, favor the direction these goals imply; expect the architecture to move toward them. Several touch load-bearing assumptions in today's code (the single-snapshot `.map` model, the single-`pack` world), so substantive refactors are anticipated, not avoided.
 
 Before making architectural decisions, read `docs/context.md` (project overview) and `docs/architecture/original-architecture.md` (a quick map of the current stack and subsystems — the baseline this fork starts from). For deeper knowledge, consult `ARCHITECTURE.md` (the FMG 2.0 target architecture), `KEYTERMS.md` (domain vocabulary), `docs/architecture/data_model.md`, and the decision records in `docs/adr/`.
+
+## Security review
+
+Security review is **invoked manually by the user**, not run automatically by agents. Do **not** launch the `/security-review` skill as part of the Review phase — even for changes that touch input handling, serialization, or filesystem I/O (which CLAUDE.md's default Review checklist would otherwise flag). The `/code-review` skill still runs as usual at Review; the user will run `/security-review` themselves when they want it.
