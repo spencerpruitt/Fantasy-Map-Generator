@@ -329,7 +329,7 @@ are separate tables keyed by the same id string, and `<App>` reaps (closes + war
 opened under an unregistered id.
 
 ### Slice 6 — HITL verification: Compare Prices parity + app health  [HITL]
-- Status: todo
+- Status: done
 - Blocked by: Slice 5
 - User stories: 1, 2, 3, 4, 5
 
@@ -337,7 +337,7 @@ opened under an unregistered id.
 tracer, plus general app health.
 
 **Acceptance criteria:**
-- [ ] User confirms: open Markets overview → Compare Prices; the panel opens, drags, and closes;
+- [x] User confirms: open Markets overview → Compare Prices; the panel opens, drags, and closes;
   the goods dropdown, refresh, percentage toggle, and CSV export all behave as before; the map and
   other menus are unaffected; a save/reload round-trips a real `.map`.
 
