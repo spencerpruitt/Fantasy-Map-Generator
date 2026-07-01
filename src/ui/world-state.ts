@@ -11,27 +11,36 @@ import type { Market } from "@/generators/markets-generator";
  * not the surfaces. Read-on-open snapshot semantics for now: no subscription,
  * no reactivity, and no mutation — reads only.
  *
- * The surface exposed here is exactly what Compare Prices reads.
+ * The surface exposed here is exactly what Compare Prices reads. Reads are
+ * guarded for an absent world (empty list / undefined) — the same defensive
+ * shape the legacy overviews use (e.g. `pack.goods || []` in charts-overview) —
+ * so a surface opened before a world is populated renders an empty state rather
+ * than throwing during render and tearing down the shell.
  */
 
-/** The full goods list (`pack.goods`). */
+/** The full goods list (`pack.goods`), or an empty list if no world is loaded. */
 export function getGoods(): Good[] {
-  return pack.goods;
+  return pack?.goods ?? [];
 }
 
-/** The full markets list (`pack.markets`). */
+/** The full goods list sorted alphabetically by name (the canonical goods order). */
+export function getGoodsSortedByName(): Good[] {
+  return [...getGoods()].sort((first, second) => first.name.localeCompare(second.name));
+}
+
+/** The full markets list (`pack.markets`), or an empty list if no world is loaded. */
 export function getMarkets(): Market[] {
-  return pack.markets;
+  return pack?.markets ?? [];
 }
 
 /** A good by id, or undefined if none exists (`Goods.get`). */
 export function getGood(id: number): Good | undefined {
-  return Goods.get(id);
+  return Goods?.get(id);
 }
 
 /** A market's display name (`Markets.getName`). */
 export function getMarketName(market: Market): string {
-  return Markets.getName(market);
+  return Markets ? Markets.getName(market) : "";
 }
 
 /**

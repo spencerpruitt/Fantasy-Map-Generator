@@ -31,7 +31,7 @@ export function App() {
 
   return (
     <>
-      {openSurfaces.map(({ id, props }) => {
+      {openSurfaces.map(({ id, props, token }) => {
         const Surface = SURFACE_COMPONENTS[id];
         if (!Surface) {
           // A surface was opened by an id with no registered component (a typo or
@@ -40,7 +40,9 @@ export function App() {
           console.warn(`No React surface registered for id "${id}"`);
           return null;
         }
-        return <Surface key={id} {...props} onClose={() => closeSurface(id)} />;
+        // Key by (id, token) so re-opening a surface remounts it fresh, resetting
+        // its in-panel view state the way the legacy dialogs did on every open.
+        return <Surface key={`${id}:${token}`} {...props} onClose={() => closeSurface(id)} />;
       })}
     </>
   );

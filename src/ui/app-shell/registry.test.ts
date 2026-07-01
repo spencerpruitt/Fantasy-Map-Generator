@@ -14,7 +14,19 @@ describe("app-shell surface registry", () => {
   it("opens a surface with its props", () => {
     openSurface("compare-prices", { goodId: 3, anchor: "#goodsEditor" });
 
-    expect(getOpenSurfaces()).toEqual([{ id: "compare-prices", props: { goodId: 3, anchor: "#goodsEditor" } }]);
+    expect(getOpenSurfaces()).toEqual([
+      expect.objectContaining({ id: "compare-prices", props: { goodId: 3, anchor: "#goodsEditor" } })
+    ]);
+  });
+
+  it("stamps a fresh, increasing token on each open so App can remount on re-open", () => {
+    openSurface("compare-prices", { goodId: 1 });
+    const firstToken = getOpenSurfaces()[0].token;
+
+    openSurface("compare-prices", { goodId: 1 });
+    const secondToken = getOpenSurfaces()[0].token;
+
+    expect(secondToken).toBeGreaterThan(firstToken);
   });
 
   it("closes an open surface", () => {
@@ -28,7 +40,7 @@ describe("app-shell surface registry", () => {
     openSurface("compare-prices", { goodId: 1 });
     openSurface("compare-prices", { goodId: 7 });
 
-    expect(getOpenSurfaces()).toEqual([{ id: "compare-prices", props: { goodId: 7 } }]);
+    expect(getOpenSurfaces()).toEqual([expect.objectContaining({ id: "compare-prices", props: { goodId: 7 } })]);
   });
 
   it("notifies subscribers on open and close, and stops after unsubscribe", () => {

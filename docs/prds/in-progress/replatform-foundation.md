@@ -289,7 +289,7 @@ anchor?)` dispatches into the shell; both existing callers still open it.
 - [x] App-shell open/close and accessor read-shape have component tests.
 
 ### Slice 4 — Compare Prices reaches full parity in React  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 3
 - User stories: 3, 4
 
@@ -299,14 +299,14 @@ column sorting, and default-good selection (dropped in the Slice 3 skeleton) are
 parity, nothing silently lost.
 
 **Acceptance criteria:**
-- [ ] Goods dropdown switches the compared good and re-renders; refresh re-reads; percentage toggle
+- [x] Goods dropdown switches the compared good and re-renders; refresh re-reads; percentage toggle
   switches modes; footer totals compute; CSV export matches legacy output; panel anchors correctly.
-- [ ] Opening without a `goodId` (e.g. from the markets overview) defaults to the first good and
+- [x] Opening without a `goodId` (e.g. from the markets overview) defaults to the first good and
   renders the full table immediately, matching the legacy auto-select (not the skeleton's "Select a
   good").
-- [ ] Column headers (Market / Stock / Price) are click-sortable, matching the legacy `applySorting`
+- [x] Column headers (Market / Stock / Price) are click-sortable, matching the legacy `applySorting`
   behavior that the skeleton dropped.
-- [ ] Component tests cover dropdown re-render, percentage toggle, CSV export, and column sorting.
+- [x] Component tests cover dropdown re-render, percentage toggle, CSV export, and column sorting.
 
 ### Slice 5 — Retire legacy Compare Prices; shrink the bridge  [AFK]
 - Status: todo

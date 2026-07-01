@@ -60,4 +60,16 @@ describe("world-state accessor", () => {
   it("reads a market's color", () => {
     expect(worldState.getMarketColor(harbor)).toBe("#ff0000");
   });
+
+  it("sorts goods alphabetically by name", () => {
+    // Stubbed order is [iron, grain]; sorted by name is [Grain, Iron].
+    expect(worldState.getGoodsSortedByName().map(good => good.name)).toEqual(["Grain", "Iron"]);
+  });
+
+  it("returns empty lists when no world is loaded instead of throwing", () => {
+    globalScope.pack = undefined;
+    expect(worldState.getGoods()).toEqual([]);
+    expect(worldState.getMarkets()).toEqual([]);
+    expect(worldState.getGoodsSortedByName()).toEqual([]);
+  });
 });

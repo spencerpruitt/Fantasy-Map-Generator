@@ -16,13 +16,22 @@
 /** Props handed to a surface when it is opened. Shape is surface-specific. */
 export type SurfaceProps = Record<string, unknown>;
 
-/** An open surface: its registry id plus the props it was opened with. */
+/**
+ * An open surface: its registry id, the props it was opened with, and a `token`
+ * that increments on every `openSurface` call. The token lets `<App>` key each
+ * surface by (id, token) so re-opening an already-open surface remounts it
+ * fresh — matching the legacy dialogs, which rebuilt their content and reset
+ * their view on every `open()`. Without it, re-opening with unchanged props
+ * would be a no-op and the surface would keep its stale in-panel state.
+ */
 export interface OpenSurface {
   id: string;
   props: SurfaceProps;
+  token: number;
 }
 
 let openSurfaces: OpenSurface[] = [];
+let nextToken = 0;
 const listeners = new Set<() => void>();
 
 function emit(): void {
@@ -31,13 +40,12 @@ function emit(): void {
 
 /**
  * Open (or re-open) a surface. Re-opening an already-open surface replaces its
- * props instead of duplicating it, so a second `open()` call just updates the
- * surface with fresh props. Always produces a new snapshot array so subscribers
- * (and `useSyncExternalStore`) see the change.
+ * entry (fresh props + a new token) instead of duplicating it. Always produces a
+ * new snapshot array so subscribers (and `useSyncExternalStore`) see the change.
  */
 export function openSurface(id: string, props: SurfaceProps = {}): void {
   const withoutExisting = openSurfaces.filter(surface => surface.id !== id);
-  openSurfaces = [...withoutExisting, { id, props }];
+  openSurfaces = [...withoutExisting, { id, props, token: nextToken++ }];
   emit();
 }
 
