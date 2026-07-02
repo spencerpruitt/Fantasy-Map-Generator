@@ -63,7 +63,8 @@ axioms require) when scheduled.
 | Item | Type | Blocked by | Status |
 |---|---|---|---|
 | Renderer spike — hybrid WebGL fill under SVG overlay + declared layer tree (absorbs AR-5) | HITL | Wave 2 foundation | ⬜ |
-| Per-surface migration PRDs — rebuild editors/overviews one at a time on React; delete matching legacy file (absorbs AR-2, AR-4, AR-7) | HITL (per feature) | renderer + foundation | ⬜ |
+| Phase 3 — read-only overviews & tools (12 surfaces per the frozen recipe) — `feat/replatform-phase3-readonly`, `prds/in-progress/replatform-phase3-readonly-overviews.md` | HITL (once, end of feature) | none — the renderer track only gates Phase 5 presentation surfaces, not Phase 3 (foundation PRD § Migration Waves) | 🟡 in progress |
+| Remaining per-surface migration PRDs (Phases 4–6) — rebuild mutating editors/shell one at a time on React; delete matching legacy file (absorbs AR-2, AR-4, AR-7) | HITL (per feature) | Phase 3; renderer for Phase 5 surfaces | ⬜ |
 | Cutover — switch entry point to React app; remove `window.X` bridge + jQuery/d3 v5 | HITL | all surfaces at parity | ⬜ |
 
 ---
