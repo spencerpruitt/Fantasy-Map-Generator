@@ -312,7 +312,7 @@ Cancel / Select / New Map buttons.
   byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 9 — elevation-profile  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 8
 - User stories: 1, 2, 3, 4, 6
 
@@ -323,12 +323,12 @@ pattern — d3 renders into a ref'd SVG inside `useEffect` with cleanup; React o
 controls.
 
 **Acceptance criteria:**
-- [ ] `open(cells, routeLen, isRiver)` seam preserved; route and river editor callers unchanged.
-- [ ] d3 chart renders in a ref'd SVG via `useEffect` with cleanup; curve-type selector re-renders
+- [x] `open(cells, routeLen, isRiver)` seam preserved; route and river editor callers unchanged.
+- [x] d3 chart renders in a ref'd SVG via `useEffect` with cleanup; curve-type selector re-renders
   the chart; biome/burg bands reach parity.
-- [ ] CSV, SVG, and PNG exports match legacy output (CSV via `csvField`; downloads via existing
+- [x] CSV, SVG, and PNG exports match legacy output (CSV via `csvField`; downloads via existing
   guarded globals).
-- [ ] Legacy rendering + static markup deleted; tests per recipe; `.map` round-trip
+- [x] Legacy rendering + static markup deleted; tests per recipe; `.map` round-trip
   byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 10 — hierarchy-tree  [AFK]

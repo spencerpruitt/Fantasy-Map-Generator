@@ -138,7 +138,8 @@ function editRoute(id) {
   function redrawRoute(route) {
     elSelected.attr("d", Routes.getPath(route));
     updateRouteLength(route);
-    if (ensureEl("elevationProfile").offsetParent) showRouteElevationProfile();
+    // The React elevation-profile surface renders #elevationGraph only while open
+    if (document.getElementById("elevationGraph")) showRouteElevationProfile();
   }
 
   function addControlPoint() {

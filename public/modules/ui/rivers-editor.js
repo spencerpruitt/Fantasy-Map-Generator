@@ -170,7 +170,8 @@ function editRiver(id) {
     elSelected.attr("d", path);
 
     updateRiverLength(river);
-    if (ensureEl("elevationProfile").offsetParent) showRiverElevationProfile();
+    // The React elevation-profile surface renders #elevationGraph only while open
+    if (document.getElementById("elevationGraph")) showRiverElevationProfile();
   }
 
   function addControlPoint() {

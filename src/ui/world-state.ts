@@ -1,4 +1,5 @@
 import type { Burg } from "@/generators/burgs-generator";
+import type { Feature } from "@/generators/features";
 import type { Good } from "@/generators/goods-generator";
 import type { Marker } from "@/generators/markers-generator";
 import type { Deal, Market } from "@/generators/markets-generator";
@@ -501,6 +502,85 @@ export function getWorldSeed(): string {
  */
 export function getGridGraph(): GridGraph | undefined {
   return typeof grid === "undefined" ? undefined : grid;
+}
+
+/**
+ * One cell's data along an elevation-profile path: raw generator height plus the
+ * profile's water clamp, the biome swatch, the raw burg/population reads, and the
+ * name/color of every region the cell belongs to (the chart tooltip and the CSV
+ * export render all of them). Absent lookups resolve to "" so the record is
+ * always renderable.
+ */
+export interface ProfileCellRecord {
+  point: [number, number];
+  /** Raw generator-scale height (`pack.cells.h`), water cells included. */
+  height: number;
+  /**
+   * The height the profile draws: water clamped to its lake's surface height,
+   * or to sea level (20) over the ocean — the legacy chart's rule.
+   */
+  surfaceHeight: number;
+  biomeId: number;
+  biomeName: string;
+  biomeColor: string;
+  burgId: number;
+  /** Rural cell population (`pack.cells.pop`), unscaled. */
+  population: number;
+  cultureName: string;
+  cultureColor: string;
+  religionName: string;
+  religionColor: string;
+  /** "" when the cell belongs to no province (id 0). */
+  provinceName: string;
+  provinceColor: string;
+  stateName: string;
+  stateColor: string;
+}
+
+/**
+ * The elevation-profile read for one cell, or undefined when the cell (or the
+ * world) does not exist. One deep getter instead of a dozen per-field ones: the
+ * chart, its tooltip, and its CSV export all consume the same record.
+ */
+export function getProfileCellRecord(cellId: number): ProfileCellRecord | undefined {
+  const cells = pack?.cells;
+  const point = cells?.p?.[cellId];
+  if (!cells || !point) return undefined;
+
+  const height = Number(cells.h[cellId]);
+  let surfaceHeight = height;
+  if (height < 20) {
+    const feature = pack.features?.[Number(cells.f[cellId])] as Feature | undefined;
+    surfaceHeight = feature?.type === "lake" ? feature.height : 20;
+  }
+
+  const biomeId = Number(cells.biome[cellId]);
+  const biomeConfig = typeof biomesData === "undefined" ? undefined : biomesData;
+  const culture = pack.cultures?.[Number(cells.culture[cellId])] as { name?: string; color?: string } | undefined;
+  const religion = pack.religions?.[Number(cells.religion[cellId])] as { name?: string; color?: string } | undefined;
+  const provinceId = Number(cells.province[cellId]);
+  const provinceEntry = provinceId ? pack.provinces?.[provinceId] : undefined;
+  const province = provinceEntry && typeof provinceEntry === "object" ? provinceEntry : undefined;
+  const state = pack.states?.[Number(cells.state[cellId])] as { name?: string; color?: string } | undefined;
+
+  return {
+    point,
+    height,
+    surfaceHeight,
+    biomeId,
+    biomeName: biomeConfig?.name?.[biomeId] ?? "",
+    biomeColor: biomeConfig?.color?.[biomeId] ?? "",
+    burgId: Number(cells.burg[cellId]),
+    population: Number(cells.pop[cellId]),
+    cultureName: culture?.name ?? "",
+    cultureColor: culture?.color ?? "",
+    religionName: religion?.name ?? "",
+    religionColor: religion?.color ?? "",
+    provinceName: province?.name ?? "",
+    provinceColor: province?.color ?? "",
+    stateName: state?.name ?? "",
+    stateColor: state?.color ?? ""
+  };
 }
 
 /**

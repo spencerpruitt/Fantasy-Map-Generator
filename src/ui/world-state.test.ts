@@ -717,6 +717,114 @@ describe("world-state heightmap-selection reads", () => {
   });
 });
 
+describe("world-state elevation-profile reads", () => {
+  beforeEach(() => {
+    // A 4-cell world: land (with a burg), deep ocean, lake water, and land in a
+    // province — covering the surface-height clamp and every name/color lookup.
+    const burgs: unknown[] = [];
+    burgs[7] = { i: 7, name: "Ridgetown", x: 3, y: 4, population: 12 };
+    globalScope.pack = {
+      cells: {
+        p: [
+          [0, 0],
+          [10, 0],
+          [20, 0],
+          [30, 0]
+        ],
+        h: [45, 5, 12, 60],
+        f: [1, 2, 3, 1],
+        biome: [6, 0, 0, 8],
+        burg: [7, 0, 0, 0],
+        pop: [3.5, 0, 0, 8],
+        culture: [1, 0, 0, 1],
+        religion: [1, 0, 0, 1],
+        province: [0, 0, 0, 2],
+        state: [1, 0, 0, 1]
+      },
+      features: [
+        0,
+        { i: 1, type: "island", height: 0 },
+        { i: 2, type: "ocean", height: 0 },
+        { i: 3, type: "lake", height: 17 }
+      ],
+      burgs,
+      cultures: [
+        { name: "Wildlands", color: "#100" },
+        { name: "Astoria", color: "#200" }
+      ],
+      religions: [
+        { name: "No religion", color: "#300" },
+        { name: "Solar Cult", color: "#400" }
+      ],
+      provinces: [0, 0, { i: 2, name: "Eastmark", color: "#500" }],
+      states: [
+        { i: 0, name: "Neutrals", color: "#600" },
+        { i: 1, name: "Astor Empire", color: "#700" }
+      ]
+    };
+    globalScope.biomesData = {
+      name: ["Marine", "", "", "", "", "", "Temperate forest", "", "Taiga"],
+      color: ["#010", "", "", "", "", "", "#020", "", "#030"]
+    };
+  });
+
+  afterEach(() => {
+    globalScope.biomesData = undefined;
+  });
+
+  it("reads a land cell's full profile record", () => {
+    expect(worldState.getProfileCellRecord(0)).toEqual({
+      point: [0, 0],
+      height: 45,
+      surfaceHeight: 45,
+      biomeId: 6,
+      biomeName: "Temperate forest",
+      biomeColor: "#020",
+      burgId: 7,
+      population: 3.5,
+      cultureName: "Astoria",
+      cultureColor: "#200",
+      religionName: "Solar Cult",
+      religionColor: "#400",
+      provinceName: "",
+      provinceColor: "",
+      stateName: "Astor Empire",
+      stateColor: "#700"
+    });
+  });
+
+  it("clamps ocean water to sea level (surface height 20)", () => {
+    const record = worldState.getProfileCellRecord(1);
+    expect(record?.height).toBe(5);
+    expect(record?.surfaceHeight).toBe(20);
+  });
+
+  it("clamps lake water to the lake's surface height", () => {
+    const record = worldState.getProfileCellRecord(2);
+    expect(record?.height).toBe(12);
+    expect(record?.surfaceHeight).toBe(17);
+  });
+
+  it("resolves a cell's province name and color when it has one", () => {
+    const record = worldState.getProfileCellRecord(3);
+    expect(record?.provinceName).toBe("Eastmark");
+    expect(record?.provinceColor).toBe("#500");
+  });
+
+  it("returns undefined for an unknown cell or when no world is loaded", () => {
+    expect(worldState.getProfileCellRecord(99)).toBeUndefined();
+    globalScope.pack = undefined;
+    expect(worldState.getProfileCellRecord(0)).toBeUndefined();
+  });
+
+  it("falls back to empty names/colors when biomesData is absent", () => {
+    globalScope.biomesData = undefined;
+    const record = worldState.getProfileCellRecord(0);
+    expect(record?.biomeName).toBe("");
+    expect(record?.biomeColor).toBe("");
+  });
+});
+
 describe("world-state reactivity (subscribe/version)", () => {
   it("bumps the world version on notifyWorldChanged", () => {
     const before = worldState.getWorldVersion();
