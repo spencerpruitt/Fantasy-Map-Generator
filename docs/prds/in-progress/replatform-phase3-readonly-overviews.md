@@ -169,7 +169,7 @@ Per recipe step 7, every slice ships the same three layers, plus the standing re
 ## Vertical Slices
 
 ### Slice 1 — production-overview  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: none
 - User stories: 1, 3, 4
 
@@ -179,14 +179,14 @@ legacy code renders styled tables with expandable deal/decision rows into the sh
 dialog via `alertMessage.innerHTML` — convert it to a real registered `<Panel>` surface.
 
 **Acceptance criteria:**
-- [ ] `open(burgId)` (seam preserved) opens a `<Panel>` surface; the burg-editor caller is
+- [x] `open(burgId)` (seam preserved) opens a `<Panel>` surface; the burg-editor caller is
   unchanged and still opens it.
-- [ ] Production tables and expandable deal/decision rows reach parity with the legacy `#alert`
+- [x] Production tables and expandable deal/decision rows reach parity with the legacy `#alert`
   rendering.
-- [ ] The surface no longer touches `alertMessage.innerHTML`; legacy rendering code is deleted.
-- [ ] Reads only via the accessor with `useWorldVersion()`; tests per recipe (accessor getters,
+- [x] The surface no longer touches `alertMessage.innerHTML`; legacy rendering code is deleted.
+- [x] Reads only via the accessor with `useWorldVersion()`; tests per recipe (accessor getters,
   RTL browser test, parity e2e); `.map` round-trip byte-identical.
-- [ ] `tsc`, `biome`, vitest (node + browser), and playwright are green.
+- [x] `tsc`, `biome`, vitest (node + browser), and playwright are green.
 
 ### Slice 2 — minimap  [AFK]
 - Status: todo

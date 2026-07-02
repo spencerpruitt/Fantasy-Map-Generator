@@ -116,6 +116,25 @@ export function getBurg(id: number): Burg | undefined {
   return pack?.burgs?.[id];
 }
 
+/** The full burgs list (`pack.burgs`), or an empty list if no world is loaded. */
+export function getBurgs(): Burg[] {
+  return pack?.burgs ?? [];
+}
+
+/** The full deals list (`pack.deals`), or an empty list if no world is loaded. */
+export function getDeals(): Deal[] {
+  return pack?.deals ?? [];
+}
+
+/**
+ * A burg's sales-tax rate (`States.getSalesTax`), or 0 when the burg or the
+ * States module is absent.
+ */
+export function getSalesTax(burg: Burg | undefined): number {
+  if (!burg || typeof States === "undefined" || !States) return 0;
+  return States.getSalesTax(burg);
+}
+
 /** Every deal where a market is the seller or the buyer (`pack.deals`). */
 export function getMarketDeals(marketId: number): Deal[] {
   const deals = pack?.deals;

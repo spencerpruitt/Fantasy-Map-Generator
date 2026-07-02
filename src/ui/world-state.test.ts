@@ -34,7 +34,10 @@ beforeEach(() => {
       { i: 0, name: "Neutrals" },
       { i: 1, name: "Ironland", fullName: "Kingdom of Ironland", coa: { shield: "heater" } }
     ],
-    cells: { market: [0, 0, 0, 1] }
+    cells: { market: [0, 0, 0, 1] },
+    deals: [
+      { i: 1, seller: 10, sellerType: "burg", buyer: 0, buyerType: "market", good: 0, units: 3, price: 2, tax: 0.5 }
+    ]
   };
   globalScope.Goods = {
     get: (id: number) => [iron, grain].find(good => good.i === id),
@@ -52,6 +55,7 @@ afterEach(() => {
   globalScope.pack = undefined;
   globalScope.Goods = undefined;
   globalScope.Markets = undefined;
+  globalScope.States = undefined;
   // Renaming tests mutate the shared harbor stub; reset it between tests.
   harbor.name = undefined;
 });
@@ -146,6 +150,38 @@ describe("world-state market-overview reads", () => {
 
     expect(notified).toBe(0);
     unsubscribe();
+  });
+});
+
+describe("world-state production-overview reads", () => {
+  it("reads the burgs list", () => {
+    const burgs = worldState.getBurgs();
+    expect(burgs[10]).toMatchObject({ i: 10, name: "Portford" });
+    expect(burgs[12]).toMatchObject({ i: 12, removed: true });
+  });
+
+  it("reads the deals list", () => {
+    expect(worldState.getDeals()).toEqual([
+      { i: 1, seller: 10, sellerType: "burg", buyer: 0, buyerType: "market", good: 0, units: 3, price: 2, tax: 0.5 }
+    ]);
+  });
+
+  it("returns empty burg/deal lists when no world is loaded instead of throwing", () => {
+    globalScope.pack = undefined;
+    expect(worldState.getBurgs()).toEqual([]);
+    expect(worldState.getDeals()).toEqual([]);
+  });
+
+  it("reads a burg's sales-tax rate through the States module", () => {
+    globalScope.States = { getSalesTax: (burg: { state?: number }) => (burg.state === 1 ? 0.1 : 0) };
+    expect(worldState.getSalesTax(worldState.getBurg(10))).toBe(0.1);
+    globalScope.States = undefined;
+  });
+
+  it("returns a zero sales-tax rate when the burg or States module is absent", () => {
+    expect(worldState.getSalesTax(undefined)).toBe(0);
+    // States is unset (no world modules loaded): rate defaults to 0.
+    expect(worldState.getSalesTax(worldState.getBurg(10))).toBe(0);
   });
 });
 
