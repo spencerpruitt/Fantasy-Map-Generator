@@ -28,6 +28,7 @@ import {
   Y_PADDING
 } from "@/controllers/charts-overview";
 import { rn } from "@/utils/numberUtils";
+import { showTip } from "../host";
 import { Panel } from "../Panel";
 import { useWorldVersion } from "../use-world-version";
 import { getMapId } from "../world-state";
@@ -38,14 +39,9 @@ interface ChartsOverviewProps {
   onClose: () => void;
 }
 
-/** The shared FMG tooltip, guarded for absence (tests/host without it). */
-function showTip(text: string): void {
-  if (typeof tip === "function") tip(text);
-}
-
-/** The legacy validation toasts (4-second error/warn), guarded for absence. */
+/** The legacy validation toasts (4-second error/warn) over the shared tooltip. */
 function showToast(text: string, type: "error" | "warn"): void {
-  if (typeof tip === "function") tip(text, false, type, 4000);
+  showTip(text, false, type, 4000);
 }
 
 // The legacy dialog persisted its state across close/re-open (the form's static
@@ -415,23 +411,22 @@ export function ChartsOverview({ anchor, onClose }: ChartsOverviewProps) {
     return persistedCharts;
   });
 
-  const [entity, setEntity] = useState(persistedForm.entity);
-  const [plotBy, setPlotBy] = useState(persistedForm.plotBy);
-  const [groupBy, setGroupBy] = useState(persistedForm.groupBy);
-  const [sorting, setSorting] = useState(persistedForm.sorting);
-  const [type, setType] = useState(persistedForm.type);
-  const [excludeNeutral, setExcludeNeutral] = useState(persistedForm.excludeNeutral);
+  const [form, setForm] = useState<ChartsFormState>(persistedForm);
   const [columns, setColumns] = useState(persistedColumns);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: worldVersion intentionally re-reads the accessor.
   const snapshot = useMemo(() => buildChartsSnapshot(), [worldVersion]);
 
+  // The single write-back point: every form change updates the one state object
+  // AND the module-level persistence (survives close/re-open, legacy parity).
   function updateForm<Key extends keyof ChartsFormState>(key: Key, value: ChartsFormState[Key]): void {
-    persistedForm = { ...persistedForm, [key]: value };
+    const next = { ...form, [key]: value };
+    persistedForm = next;
+    setForm(next);
   }
 
   function plotChart(): void {
-    const validation = validateChartRequest(entity, plotBy, groupBy);
+    const validation = validateChartRequest(form.entity, form.plotBy, form.groupBy);
     if (!validation.ok) {
       showToast(validation.error, "error");
       return;
@@ -440,12 +435,12 @@ export function ChartsOverview({ anchor, onClose }: ChartsOverviewProps) {
 
     const chart: ChartOptions = {
       id: nextChartId++,
-      entity,
-      plotBy,
+      entity: form.entity,
+      plotBy: form.plotBy,
       groupBy: validation.groupBy,
-      sorting,
-      type,
-      excludeNeutral
+      sorting: form.sorting,
+      type: form.type,
+      excludeNeutral: form.excludeNeutral
     };
     setCharts(previous => {
       const next = [...previous, chart];
@@ -473,7 +468,7 @@ export function ChartsOverview({ anchor, onClose }: ChartsOverviewProps) {
     });
   }
 
-  const metricHint = quantizationMap[plotBy]?.hint;
+  const metricHint = quantizationMap[form.plotBy]?.hint;
 
   const dimensionOptions = Object.entries(entitiesMap).map(([value, { label }]) => (
     <option key={value} value={value}>
@@ -500,11 +495,8 @@ export function ChartsOverview({ anchor, onClose }: ChartsOverviewProps) {
             <select
               data-tip="Select entity (y axis)"
               aria-label="Select entity (y axis)"
-              value={entity}
-              onChange={event => {
-                setEntity(event.target.value);
-                updateForm("entity", event.target.value);
-              }}
+              value={form.entity}
+              onChange={event => updateForm("entity", event.target.value)}
             >
               {dimensionOptions}
             </select>
@@ -513,11 +505,8 @@ export function ChartsOverview({ anchor, onClose }: ChartsOverviewProps) {
               <span>by</span>
               <select
                 aria-label="Select metric to plot (x axis)"
-                value={plotBy}
-                onChange={event => {
-                  setPlotBy(event.target.value);
-                  updateForm("plotBy", event.target.value);
-                }}
+                value={form.plotBy}
+                onChange={event => updateForm("plotBy", event.target.value)}
               >
                 {metricOptions}
               </select>
@@ -538,11 +527,8 @@ export function ChartsOverview({ anchor, onClose }: ChartsOverviewProps) {
               <span>grouped by</span>
               <select
                 aria-label="Select entity to group by"
-                value={groupBy}
-                onChange={event => {
-                  setGroupBy(event.target.value);
-                  updateForm("groupBy", event.target.value);
-                }}
+                value={form.groupBy}
+                onChange={event => updateForm("groupBy", event.target.value)}
               >
                 {dimensionOptions}
               </select>
@@ -552,11 +538,8 @@ export function ChartsOverview({ anchor, onClose }: ChartsOverviewProps) {
               <span>sorted</span>
               <select
                 aria-label="Sorting type"
-                value={sorting}
-                onChange={event => {
-                  setSorting(event.target.value);
-                  updateForm("sorting", event.target.value);
-                }}
+                value={form.sorting}
+                onChange={event => updateForm("sorting", event.target.value)}
               >
                 <option value="value">by value</option>
                 <option value="name">by name</option>
@@ -570,11 +553,8 @@ export function ChartsOverview({ anchor, onClose }: ChartsOverviewProps) {
               <span>Type</span>
               <select
                 aria-label="Select chart type"
-                value={type}
-                onChange={event => {
-                  setType(event.target.value);
-                  updateForm("type", event.target.value);
-                }}
+                value={form.type}
+                onChange={event => updateForm("type", event.target.value)}
               >
                 <option value="stackedBar">Stacked Bar</option>
                 <option value="normalizedStackedBar">Normalized Bar</option>
@@ -602,11 +582,8 @@ export function ChartsOverview({ anchor, onClose }: ChartsOverviewProps) {
               <input
                 type="checkbox"
                 className="native"
-                checked={excludeNeutral}
-                onChange={event => {
-                  setExcludeNeutral(event.target.checked);
-                  updateForm("excludeNeutral", event.target.checked);
-                }}
+                checked={form.excludeNeutral}
+                onChange={event => updateForm("excludeNeutral", event.target.checked)}
               />
               <span>Exclude neutral</span>
             </label>

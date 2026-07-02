@@ -344,7 +344,7 @@ describe("<ChartsOverview>", () => {
     expect(document.querySelector("figure")).toBeNull();
     expect(svg.childNodes.length).toBe(0);
     const tipMock = globalScope.tip as ReturnType<typeof vi.fn>;
-    expect(tipMock.mock.calls.at(-1)).toEqual([""]);
+    expect(tipMock.mock.calls.at(-1)?.[0]).toBe("");
   });
 
   it("renders an empty state instead of a chart when no world is loaded", () => {

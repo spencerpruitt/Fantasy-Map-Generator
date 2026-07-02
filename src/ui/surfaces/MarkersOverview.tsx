@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useReducer, useState } from "react";
-import { bulkDeleteConfirm } from "@/controllers/bulk-action/bulk-delete-confirm";
-import type { CascadeSummary } from "@/controllers/bulk-action/bulk-entity-adapter";
 import type { Marker } from "@/generators/markers-generator";
 import { findEl } from "@/utils/nodeUtils";
-import { plural } from "@/utils/stringUtils";
-import { BulkControls, BulkRowCheckbox, customizationActive, useBulkSelection } from "../bulk-selection";
+import { BulkControls, BulkRowCheckbox, lockableBulkActions, useBulkSelection } from "../bulk-selection";
 import { Panel } from "../Panel";
 import { LOCKED_TIP, RowIcon, UNLOCKED_TIP } from "../RowIcon";
-import { type SortDirection, SortHeader, sortableHeaderClass } from "../SortHeader";
+import { SortHeader, useSortState } from "../SortHeader";
 import { useWorldVersion } from "../use-world-version";
 import {
   getMarkerNote,
@@ -107,8 +104,7 @@ export function MarkersOverview({ anchor, onClose }: MarkersOverviewProps) {
   const worldVersion = useWorldVersion();
 
   const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>("up");
+  const { sortKey, sortDirection, handleSort, headerClassName } = useSortState<SortKey>(null, "up", () => true);
   const [addType, setAddType] = useState(persistedAddType);
   const [typeMenuOpen, setTypeMenuOpen] = useState(false);
   const bulk = useBulkSelection();
@@ -169,19 +165,6 @@ export function MarkersOverview({ anchor, onClose }: MarkersOverviewProps) {
     const direction = sortDirection === "down" ? -1 : 1;
     return [...view.rows].sort((first, second) => first.type.localeCompare(second.type) * direction);
   }, [view.rows, sortKey, sortDirection]);
-
-  function handleSort(key: SortKey): void {
-    if (key === sortKey) {
-      setSortDirection(current => (current === "down" ? "up" : "down"));
-      return;
-    }
-    setSortKey(key);
-    // Legacy sortLines: a fresh alphabetical column starts ascending.
-    setSortDirection("up");
-  }
-
-  const typeHeaderClassName =
-    sortKey === "type" ? sortableHeaderClass(true, true, sortDirection) : "sortable alphabetically";
 
   function findMarker(id: number): Marker | undefined {
     return getMarkers().find(marker => marker.i === id);
@@ -304,46 +287,16 @@ export function MarkersOverview({ anchor, onClose }: MarkersOverviewProps) {
 
   const visibleIds = sortedRows.map(row => row.id);
 
-  function describeCascade(ids: number[]): CascadeSummary {
-    const markerById = new Map(getMarkers().map(marker => [marker.i, marker]));
-    const selectedMarkers = ids.map(id => markerById.get(id)).filter((marker): marker is Marker => Boolean(marker));
-    const deletable = selectedMarkers.filter(marker => !marker.lock).length;
-    const skippedLocked = selectedMarkers.length - deletable;
-    return { lines: [`${plural(deletable, "marker")} will be removed`], deletable, skippedLocked };
-  }
-
-  function handleBulkDelete(): void {
-    // Never mutate the pack while a manual-assignment/regeneration mode is
-    // active (same guard the legacy bulk bar had).
-    if (customizationActive()) return;
-    const ids = [...bulk.selected];
-    bulkDeleteConfirm({
-      typeLabel: "markers",
-      describe: () => describeCascade(ids),
-      onConfirm: () => {
-        const markerById = new Map(getMarkers().map(marker => [marker.i, marker]));
-        const deletedIds: number[] = [];
-        for (const id of ids) {
-          const marker = markerById.get(id);
-          if (!marker || marker.lock) continue; // skipped (locked) rows stay selected
-          deleteMarkerAndElement(id);
-          deletedIds.push(id);
-        }
-        bulk.pruneSelected(id => !deletedIds.includes(id));
-        notifyWorldChanged();
-      }
-    });
-  }
-
-  function handleBulkLock(locked: boolean): void {
-    if (customizationActive()) return;
-    const markerById = new Map(getMarkers().map(marker => [marker.i, marker]));
-    for (const id of bulk.selected) {
-      const marker = markerById.get(id);
-      if (marker) setMarkerLock(marker, locked);
-    }
-    notifyWorldChanged();
-  }
+  const { handleBulkDelete, handleBulkLock } = lockableBulkActions({
+    selection: bulk,
+    typeLabel: "markers",
+    noun: "marker",
+    getAll: getMarkers,
+    getId: marker => marker.i,
+    isLocked: marker => Boolean(marker.lock),
+    remove: marker => deleteMarkerAndElement(marker.i),
+    setLock: setMarkerLock
+  });
 
   // Exports EVERY marker in pack order (not the filtered rows) with
   // always-quoted note fields and no trailing newline — byte-identical to the
@@ -370,7 +323,7 @@ export function MarkersOverview({ anchor, onClose }: MarkersOverviewProps) {
         <SortHeader
           label="Type"
           sortKey="type"
-          className={typeHeaderClassName}
+          className={headerClassName("type")}
           dataTip="Click to sort by marker type"
           onSort={handleSort}
         />

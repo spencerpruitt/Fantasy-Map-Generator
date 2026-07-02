@@ -1,14 +1,11 @@
 import { useMemo, useReducer, useState } from "react";
-import { bulkDeleteConfirm } from "@/controllers/bulk-action/bulk-delete-confirm";
-import type { CascadeSummary } from "@/controllers/bulk-action/bulk-entity-adapter";
 import type { Route } from "@/generators/routes-generator";
 import { rn } from "@/utils/numberUtils";
-import { plural } from "@/utils/stringUtils";
-import { BulkControls, BulkRowCheckbox, customizationActive, useBulkSelection } from "../bulk-selection";
+import { BulkControls, BulkRowCheckbox, lockableBulkActions, useBulkSelection } from "../bulk-selection";
 import { csvField } from "../csv";
 import { Panel } from "../Panel";
 import { LOCKED_TIP, RowIcon, UNLOCKED_TIP } from "../RowIcon";
-import { type SortDirection, SortHeader, sortableHeaderClass } from "../SortHeader";
+import { SortHeader, useSortState } from "../SortHeader";
 import { useWorldVersion } from "../use-world-version";
 import {
   getRouteLength,
@@ -62,8 +59,11 @@ export function RoutesOverview({ anchor, onClose }: RoutesOverviewProps) {
   const worldVersion = useWorldVersion();
 
   const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("length");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("down");
+  const { sortKey, sortDirection, handleSort, headerClassName } = useSortState<SortKey>(
+    "length",
+    "down",
+    key => key !== "length"
+  );
   const bulk = useBulkSelection();
 
   const scale = typeof distanceScale === "number" ? distanceScale : 1;
@@ -127,21 +127,6 @@ export function RoutesOverview({ anchor, onClose }: RoutesOverviewProps) {
       return firstKey.localeCompare(secondKey) * direction;
     });
   }, [view.rows, sortKey, sortDirection]);
-
-  function handleSort(key: SortKey): void {
-    if (key === sortKey) {
-      setSortDirection(current => (current === "down" ? "up" : "down"));
-      return;
-    }
-    setSortKey(key);
-    // Legacy sortLines: a fresh alphabetical column starts ascending, a fresh
-    // numeric column starts descending.
-    setSortDirection(key === "length" ? "down" : "up");
-  }
-
-  function headerClassName(key: SortKey): string {
-    return sortableHeaderClass(key === sortKey, key !== "length", sortDirection);
-  }
 
   function findRoute(id: number): Route | undefined {
     return getRoutes().find(route => route.i === id);
@@ -253,46 +238,16 @@ export function RoutesOverview({ anchor, onClose }: RoutesOverviewProps) {
 
   const visibleIds = sortedRows.map(row => row.id);
 
-  function describeCascade(ids: number[]): CascadeSummary {
-    const routeById = new Map(getRoutes().map(route => [route.i, route]));
-    const selectedRoutes = ids.map(id => routeById.get(id)).filter((route): route is Route => Boolean(route));
-    const deletable = selectedRoutes.filter(route => !route.lock).length;
-    const skippedLocked = selectedRoutes.length - deletable;
-    return { lines: [`${plural(deletable, "route")} will be removed`], deletable, skippedLocked };
-  }
-
-  function handleBulkDelete(): void {
-    // Never mutate the pack while a manual-assignment/regeneration mode is
-    // active (same guard the legacy bulk bar had).
-    if (customizationActive()) return;
-    const ids = [...bulk.selected];
-    bulkDeleteConfirm({
-      typeLabel: "routes",
-      describe: () => describeCascade(ids),
-      onConfirm: () => {
-        const routeById = new Map(getRoutes().map(route => [route.i, route]));
-        const deletedIds: number[] = [];
-        for (const id of ids) {
-          const route = routeById.get(id);
-          if (!route || route.lock) continue; // skipped (locked) rows stay selected
-          removeRoute(route);
-          deletedIds.push(id);
-        }
-        bulk.pruneSelected(id => !deletedIds.includes(id));
-        notifyWorldChanged();
-      }
-    });
-  }
-
-  function handleBulkLock(locked: boolean): void {
-    if (customizationActive()) return;
-    const routeById = new Map(getRoutes().map(route => [route.i, route]));
-    for (const id of bulk.selected) {
-      const route = routeById.get(id);
-      if (route) setRouteLock(route, locked);
-    }
-    notifyWorldChanged();
-  }
+  const { handleBulkDelete, handleBulkLock } = lockableBulkActions({
+    selection: bulk,
+    typeLabel: "routes",
+    noun: "route",
+    getAll: getRoutes,
+    getId: route => route.i,
+    isLocked: route => Boolean(route.lock),
+    remove: removeRoute,
+    setLock: setRouteLock
+  });
 
   // The rendered rows drive the CSV so it matches the visible (filtered +
   // sorted) table, exactly like the legacy export that read the row DOM.

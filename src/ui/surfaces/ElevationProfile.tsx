@@ -17,6 +17,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { rn } from "@/utils/numberUtils";
 import { csvField } from "../csv";
+import { showTip } from "../host";
 import { Panel } from "../Panel";
 import { useWorldVersion } from "../use-world-version";
 import { getBurg, getProfileCellRecord, type ProfileCellRecord } from "../world-state";
@@ -76,10 +77,6 @@ function populationRateValue(): number {
 
 function urbanizationValue(): number {
   return typeof urbanization === "undefined" || urbanization === undefined ? 0 : urbanization;
-}
-
-function showTip(text: string): void {
-  if (typeof tip === "function") tip(text);
 }
 
 // The per-path chart model derived from the world: the accessor records plus the

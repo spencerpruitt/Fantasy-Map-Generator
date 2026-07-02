@@ -226,7 +226,7 @@ describe("<ElevationProfile>", () => {
     expect(hoverTip).toContain("Elevation:");
 
     unmount();
-    expect(tipMock.mock.calls.at(-1)).toEqual([""]);
+    expect(tipMock.mock.calls.at(-1)?.[0]).toBe("");
   });
 
   it("renders a fallback when the world cannot resolve the cells", () => {

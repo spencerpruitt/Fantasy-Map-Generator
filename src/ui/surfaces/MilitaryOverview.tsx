@@ -8,7 +8,7 @@ import { si } from "@/utils/unitUtils";
 import { customizationActive } from "../bulk-selection";
 import { Panel } from "../Panel";
 import { RowIcon } from "../RowIcon";
-import { type SortDirection, SortHeader, sortableHeaderClass } from "../SortHeader";
+import { SortHeader, useSortState } from "../SortHeader";
 import { useWorldVersion } from "../use-world-version";
 import { getMilitaryUnits, getStatePopulation, getStates, notifyWorldChanged, setStateWarAlert } from "../world-state";
 
@@ -77,8 +77,9 @@ export function MilitaryOverview({ anchor, onClose }: MilitaryOverviewProps) {
   const [refreshCount, refresh] = useReducer(count => count + 1, 0);
   const worldVersion = useWorldVersion();
 
-  const [sortKey, setSortKey] = useState("total");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("down");
+  const { sortKey, sortDirection, handleSort, headerClassName } = useSortState<string>("total", "down", key =>
+    ALPHABETICAL_KEYS.has(key)
+  );
   const [percentage, setPercentage] = useState(false);
 
   // The state whose armies are currently hover-highlighted, so unmount can
@@ -148,21 +149,6 @@ export function MilitaryOverview({ anchor, onClose }: MilitaryOverviewProps) {
       return (numericValue(first) - numericValue(second)) * direction;
     });
   }, [view.rows, sortKey, sortDirection]);
-
-  function handleSort(key: string): void {
-    if (key === sortKey) {
-      setSortDirection(current => (current === "down" ? "up" : "down"));
-      return;
-    }
-    setSortKey(key);
-    // Legacy sortLines: a fresh alphabetical column starts ascending, a fresh
-    // numeric column starts descending.
-    setSortDirection(ALPHABETICAL_KEYS.has(key) ? "up" : "down");
-  }
-
-  function headerClassName(key: string): string {
-    return sortableHeaderClass(key === sortKey, ALPHABETICAL_KEYS.has(key), sortDirection);
-  }
 
   /** The footer's per-state average, 0 (not NaN) for a stateless world. */
   function average(sum: number): number {

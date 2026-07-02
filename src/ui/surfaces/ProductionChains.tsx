@@ -31,6 +31,7 @@ import {
   ZOOM_MIN
 } from "@/controllers/production-chains";
 import { C_12 } from "@/utils/colorUtils";
+import { showTip } from "../host";
 import { Panel } from "../Panel";
 import { useWorldVersion } from "../use-world-version";
 import { getGood, getGoodStroke, getGoods } from "../world-state";
@@ -42,11 +43,6 @@ interface ProductionChainsProps {
 }
 
 type GraphGroupSelection = Selection<SVGGElement, unknown, SVGSVGElement, unknown>;
-
-/** The shared FMG tooltip, guarded for absence (tests/host without it). */
-function showTip(text: string): void {
-  if (typeof tip === "function") tip(text);
-}
 
 /** The legacy edge stroke color for a C_12 palette slot (`Goods.getStroke`). */
 function edgeStrokeColor(index: number): string {

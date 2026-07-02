@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { bulkDeleteConfirm } from "@/controllers/bulk-action/bulk-delete-confirm";
+import type { CascadeSummary } from "@/controllers/bulk-action/bulk-entity-adapter";
+import { plural } from "@/utils/stringUtils";
+import { notifyWorldChanged } from "./world-state";
 
 /**
  * bulk-selection — the in-surface bulk mode shared by the converted overview
@@ -7,10 +11,10 @@ import { useState } from "react";
  * a toggle button, per-row checkboxes, select-all over the VISIBLE (filtered +
  * sorted) rows, an "N selected" count, and the selection cleared on exit.
  *
- * What stays in each surface: the action handlers themselves (delete cascades,
- * locked-row skipping, lock/unlock), because those are entity-specific domain
- * calls. The shared React bulk bar with cross-surface mutation plumbing remains
- * Phase 4.
+ * The action handlers over lockable entities (delete skipping locked rows,
+ * lock/unlock) are shared too — see lockableBulkActions — parameterized on the
+ * surface's entity-specific domain calls. The shared React bulk bar with
+ * cross-surface mutation plumbing remains Phase 4.
  */
 
 // The legacy BulkActionBar's toggle tooltip, kept as the default wording.
@@ -75,6 +79,83 @@ export function useBulkSelection(): BulkSelection {
   }
 
   return { bulkMode, selected, toggleBulkMode, toggleSelected, toggleAllVisible, pruneSelected };
+}
+
+interface LockableBulkParams<Entity> {
+  selection: BulkSelection;
+  /** Plural label for the confirm dialog ("routes", "markers"). */
+  typeLabel: string;
+  /** Singular noun for the cascade-summary count line ("route", "marker"). */
+  noun: string;
+  getAll: () => Entity[];
+  getId: (entity: Entity) => number;
+  isLocked: (entity: Entity) => boolean;
+  /** Remove one (unlocked) entity, including any renderer side-effect. */
+  remove: (entity: Entity) => void;
+  setLock: (entity: Entity, locked: boolean) => void;
+}
+
+interface LockableBulkActions {
+  handleBulkDelete: () => void;
+  handleBulkLock: (locked: boolean) => void;
+}
+
+/**
+ * The bulk-action pair shared by overviews of lockable entities (routes,
+ * markers): confirm-then-delete the selected rows — locked rows are skipped
+ * and stay selected — and lock/unlock the selected rows. Both never mutate the
+ * pack while a manual-assignment/regeneration mode is active (the same guard
+ * the legacy bulk bar had) and signal notifyWorldChanged after mutating.
+ * Rivers keep their own delete handler: their cascade (basin/tributary)
+ * arithmetic doesn't fit the lockable shape.
+ */
+export function lockableBulkActions<Entity>(params: LockableBulkParams<Entity>): LockableBulkActions {
+  const { selection, typeLabel, noun, getAll, getId, isLocked, remove, setLock } = params;
+
+  function entitiesById(): Map<number, Entity> {
+    return new Map(getAll().map(entity => [getId(entity), entity]));
+  }
+
+  function describeCascade(ids: number[]): CascadeSummary {
+    const byId = entitiesById();
+    const selectedEntities = ids.map(id => byId.get(id)).filter((entity): entity is Entity => entity !== undefined);
+    const deletable = selectedEntities.filter(entity => !isLocked(entity)).length;
+    const skippedLocked = selectedEntities.length - deletable;
+    return { lines: [`${plural(deletable, noun)} will be removed`], deletable, skippedLocked };
+  }
+
+  function handleBulkDelete(): void {
+    if (customizationActive()) return;
+    const ids = [...selection.selected];
+    bulkDeleteConfirm({
+      typeLabel,
+      describe: () => describeCascade(ids),
+      onConfirm: () => {
+        const byId = entitiesById();
+        const deletedIds = new Set<number>();
+        for (const id of ids) {
+          const entity = byId.get(id);
+          if (!entity || isLocked(entity)) continue; // skipped (locked) rows stay selected
+          remove(entity);
+          deletedIds.add(id);
+        }
+        selection.pruneSelected(id => !deletedIds.has(id));
+        notifyWorldChanged();
+      }
+    });
+  }
+
+  function handleBulkLock(locked: boolean): void {
+    if (customizationActive()) return;
+    const byId = entitiesById();
+    for (const id of selection.selected) {
+      const entity = byId.get(id);
+      if (entity) setLock(entity, locked);
+    }
+    notifyWorldChanged();
+  }
+
+  return { handleBulkDelete, handleBulkLock };
 }
 
 /**

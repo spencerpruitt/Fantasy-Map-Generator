@@ -15,7 +15,7 @@ import { si } from "@/utils/unitUtils";
 import { BulkControls, BulkRowCheckbox, customizationActive, useBulkSelection } from "../bulk-selection";
 import { Panel } from "../Panel";
 import { RowIcon } from "../RowIcon";
-import { type SortDirection, SortHeader, sortableHeaderClass } from "../SortHeader";
+import { SortHeader, useSortState } from "../SortHeader";
 import { useWorldVersion } from "../use-world-version";
 import { addRegiment, getMilitaryUnits, getRegiments, getStates, notifyWorldChanged } from "../world-state";
 
@@ -80,8 +80,9 @@ export function RegimentsOverview({ stateId = -1, anchor, onClose }: RegimentsOv
   // The filter defaults to the seam's state when it is a valid state, else "all"
   // (the legacy select fell back to its first option for an unknown id).
   const [stateFilter, setStateFilter] = useState(() => (getStates().some(state => state.i === stateId) ? stateId : -1));
-  const [sortKey, setSortKey] = useState("total");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("down");
+  const { sortKey, sortDirection, handleSort, headerClassName } = useSortState<string>("total", "down", key =>
+    ALPHABETICAL_KEYS.has(key)
+  );
   const [percentage, setPercentage] = useState(false);
   const [addMode, setAddMode] = useState(false);
   const bulk = useBulkSelection();
@@ -149,21 +150,6 @@ export function RegimentsOverview({ stateId = -1, anchor, onClose }: RegimentsOv
       return (numericValue(first) - numericValue(second)) * direction;
     });
   }, [view.rows, sortKey, sortDirection]);
-
-  function handleSort(key: string): void {
-    if (key === sortKey) {
-      setSortDirection(current => (current === "down" ? "up" : "down"));
-      return;
-    }
-    setSortKey(key);
-    // Legacy sortLines: a fresh alphabetical column starts ascending, a fresh
-    // numeric column starts descending.
-    setSortDirection(ALPHABETICAL_KEYS.has(key) ? "up" : "down");
-  }
-
-  function headerClassName(key: string): string {
-    return sortableHeaderClass(key === sortKey, ALPHABETICAL_KEYS.has(key), sortDirection);
-  }
 
   /** A unit/total cell's text: the absolute count, or its share of the column total. */
   function cellText(value: number, columnTotal: number): string {

@@ -3,7 +3,7 @@ import { rn } from "@/utils/numberUtils";
 import { formatPrice } from "@/utils/unitUtils";
 import { csvField } from "../csv";
 import { Panel } from "../Panel";
-import { type SortDirection, SortHeader, sortableHeaderClass } from "../SortHeader";
+import { SortHeader, useSortState } from "../SortHeader";
 import { useWorldVersion } from "../use-world-version";
 import {
   getGood,
@@ -108,8 +108,11 @@ export function ComparePrices({ goodId, anchor, onClose }: ComparePricesProps) {
   const sortedGoods = useMemo(() => getGoodsSortedByName(), [refreshCount, worldVersion]);
 
   const [selectedGoodId, setSelectedGoodId] = useState(() => resolveInitialGoodId(goodId));
-  const [sortKey, setSortKey] = useState<SortKey>("stock");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("down");
+  const { sortKey, sortDirection, handleSort, headerClassName } = useSortState<SortKey>(
+    "stock",
+    "down",
+    key => key === "market"
+  );
   const [showPercentage, setShowPercentage] = useState(false);
 
   // Persist the current selection so a later reopen returns to it (legacy parity).
@@ -163,18 +166,6 @@ export function ComparePrices({ goodId, anchor, onClose }: ComparePricesProps) {
     refresh();
   }
 
-  // Clicking a header sorts by its column. Re-clicking the active column flips
-  // direction; a fresh column starts ascending for names and descending for
-  // numbers — matching the legacy `sortLines` toggle.
-  function handleSort(key: SortKey): void {
-    if (key === sortKey) {
-      setSortDirection(current => (current === "down" ? "up" : "down"));
-      return;
-    }
-    setSortKey(key);
-    setSortDirection(key === "market" ? "up" : "down");
-  }
-
   // CSV is built from world order (the `rows` array, not the sorted view), with
   // each field escaped, then handed to the window download globals — same output
   // as the legacy `downloadCsv` for names without special characters.
@@ -184,10 +175,6 @@ export function ComparePrices({ goodId, anchor, onClose }: ComparePricesProps) {
     const lines = rows.map(row => [csvField(row.name), String(row.stock), String(row.price)].join(","));
     const csv = `${[header, ...lines].join("\n")}\n`;
     downloadFile(csv, `${getFileName(`Compare_Prices_${goodName}`)}.csv`);
-  }
-
-  function headerClassName(key: SortKey): string {
-    return sortableHeaderClass(key === sortKey, key === "market", sortDirection);
   }
 
   function stockCellText(stock: number): string {

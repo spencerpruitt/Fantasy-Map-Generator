@@ -3,6 +3,7 @@ import { drag, mean, select, stratify, tree, zoom, zoomTransform } from "d3";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { HierarchyElement } from "@/controllers/hierarchy-tree";
 import { minmax } from "@/utils/numberUtils";
+import { showTip } from "../host";
 import { Panel } from "../Panel";
 import { useWorldVersion } from "../use-world-version";
 import { notifyWorldChanged } from "../world-state";
@@ -115,11 +116,6 @@ const SCOPED_CSS = /* css */ `
     animation: dash 80s linear backwards;
   }
 `;
-
-/** The shared FMG tooltip, guarded for absence (tests/host without it). */
-function showTip(text: string, main?: boolean, type?: "error" | "info" | "warn" | "success", time?: number): void {
-  if (typeof tip === "function") tip(text, main, type, time);
-}
 
 /**
  * Normalize origins in place, exactly as legacy: the root gets `[null]`, an

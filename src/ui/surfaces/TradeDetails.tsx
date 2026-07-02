@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { clearHighlight, highlight } from "@/renderers/draw-trade-animation";
 import type { TradeBatch } from "@/renderers/trade-animation";
 import { rn } from "@/utils/numberUtils";
 import { formatPrice } from "@/utils/unitUtils";
 import { Panel } from "../Panel";
-import { type SortDirection, SortHeader, sortableHeaderClass } from "../SortHeader";
+import { SortHeader, useSortState } from "../SortHeader";
 import { useWorldVersion } from "../use-world-version";
 import { getBurg, getGood, getGoodStroke } from "../world-state";
 
@@ -48,8 +48,11 @@ interface TradeRow {
 export function TradeDetails({ batch, anchor, onClose }: TradeDetailsProps) {
   const worldVersion = useWorldVersion();
 
-  const [sortKey, setSortKey] = useState<SortKey>("units");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("down");
+  const { sortKey, sortDirection, handleSort, headerClassName } = useSortState<SortKey>(
+    "units",
+    "down",
+    key => key === "good"
+  );
 
   const startBurg = getBurg(batch.startBurgId);
   const endBurg = getBurg(batch.endBurgId);
@@ -122,19 +125,6 @@ export function TradeDetails({ batch, anchor, onClose }: TradeDetailsProps) {
     }, 0);
     return rn(rn(length, 2) * distanceScale);
   }, [path]);
-
-  function handleSort(key: SortKey): void {
-    if (key === sortKey) {
-      setSortDirection(current => (current === "down" ? "up" : "down"));
-      return;
-    }
-    setSortKey(key);
-    setSortDirection(key === "good" ? "up" : "down");
-  }
-
-  function headerClassName(key: SortKey): string {
-    return sortableHeaderClass(key === sortKey, key === "good", sortDirection);
-  }
 
   function handleZoom(end: "start" | "end"): void {
     const burg = end === "start" ? startBurg : endBurg;

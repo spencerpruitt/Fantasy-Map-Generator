@@ -8,6 +8,8 @@
  * Generic over the surface's own sort-key union so each surface stays type-safe.
  */
 
+import { useState } from "react";
+
 /** Sort direction shared by the table surfaces. */
 export type SortDirection = "up" | "down";
 
@@ -21,6 +23,66 @@ export function sortableHeaderClass(isActive: boolean, isAlphabetical: boolean, 
   if (!isActive) return base;
   const type = isAlphabetical ? "name" : "number";
   return `${base} icon-sort-${type}-${direction}`;
+}
+
+interface SortStateBase<Key extends string> {
+  sortDirection: SortDirection;
+  /** Header click handler: flip direction on the active column, activate a fresh one. */
+  handleSort: (key: Key) => void;
+  /** The header class for one column (see sortableHeaderClass). */
+  headerClassName: (key: Key) => string;
+}
+
+/** Sort state for tables that always have an active column. */
+export interface SortState<Key extends string> extends SortStateBase<Key> {
+  sortKey: Key;
+}
+
+/** Sort state for tables that start unsorted (no active column until a click). */
+export interface NullableSortState<Key extends string> extends SortStateBase<Key> {
+  sortKey: Key | null;
+}
+
+/**
+ * useSortState — the sort state shared by every sortable table surface: the
+ * active column + direction pair, the legacy `sortLines` click rule
+ * (re-clicking the active column flips direction; a fresh alphabetical column
+ * starts ascending, a fresh numeric column descending), and the header-class
+ * helper. Pass `null` as the initial key for tables that start unsorted
+ * (legacy headers that shipped without an `icon-sort` indicator).
+ */
+export function useSortState<Key extends string>(
+  initialKey: Key,
+  initialDirection: SortDirection,
+  isAlphabetical: (key: Key) => boolean
+): SortState<Key>;
+export function useSortState<Key extends string>(
+  initialKey: Key | null,
+  initialDirection: SortDirection,
+  isAlphabetical: (key: Key) => boolean
+): NullableSortState<Key>;
+export function useSortState<Key extends string>(
+  initialKey: Key | null,
+  initialDirection: SortDirection,
+  isAlphabetical: (key: Key) => boolean
+): NullableSortState<Key> {
+  const [sortKey, setSortKey] = useState<Key | null>(initialKey);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(initialDirection);
+
+  function handleSort(key: Key): void {
+    if (key === sortKey) {
+      setSortDirection(current => (current === "down" ? "up" : "down"));
+      return;
+    }
+    setSortKey(key);
+    setSortDirection(isAlphabetical(key) ? "up" : "down");
+  }
+
+  function headerClassName(key: Key): string {
+    return sortableHeaderClass(key === sortKey, isAlphabetical(key), sortDirection);
+  }
+
+  return { sortKey, sortDirection, handleSort, headerClassName };
 }
 
 interface SortHeaderProps<Key extends string> {

@@ -3,7 +3,7 @@ import { rn } from "@/utils/numberUtils";
 import { formatPrice } from "@/utils/unitUtils";
 import { csvField } from "../csv";
 import { Panel } from "../Panel";
-import { type SortDirection, SortHeader, sortableHeaderClass } from "../SortHeader";
+import { SortHeader, useSortState } from "../SortHeader";
 import { useWorldVersion } from "../use-world-version";
 import { getBurg, getGood, getGoodStroke, getMarket, getMarketDeals, getMarketName } from "../world-state";
 
@@ -71,8 +71,11 @@ export function MarketDeals({ marketId, anchor, onClose }: MarketDealsProps) {
   const [filter, setFilter] = useState<DealFilter>("all");
   // No column is sorted until the user clicks a header (legacy parity — the deals
   // header ships no default `icon-sort` indicator).
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>("down");
+  const { sortKey, sortDirection, handleSort, headerClassName } = useSortState<SortKey>(
+    null,
+    "down",
+    key => key === "good" || key === "direction" || key === "counterparty"
+  );
 
   const market = getMarket(marketId);
 
@@ -137,21 +140,6 @@ export function MarketDeals({ marketId, anchor, onClose }: MarketDealsProps) {
   const dealCount = filteredRows.length;
   const netFlow = filteredRows.reduce((sum, row) => sum + row.net, 0);
   const renderedRows = sortedRows.filter(row => row.hasGood);
-
-  function handleSort(key: SortKey): void {
-    if (key === sortKey) {
-      setSortDirection(current => (current === "down" ? "up" : "down"));
-      return;
-    }
-    setSortKey(key);
-    const alphabetical = key === "good" || key === "direction" || key === "counterparty";
-    setSortDirection(alphabetical ? "up" : "down");
-  }
-
-  function headerClassName(key: SortKey): string {
-    const alphabetical = key === "good" || key === "direction" || key === "counterparty";
-    return sortableHeaderClass(key === sortKey, alphabetical, sortDirection);
-  }
 
   // Zoom to the counterparty — but only when its burg resolved, matching the legacy
   // `if (party)` guard (an unresolved party must not yank the map to (0,0)).

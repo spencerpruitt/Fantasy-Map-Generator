@@ -4,7 +4,7 @@ import { rn } from "@/utils/numberUtils";
 import { formatPrice } from "@/utils/unitUtils";
 import { csvField } from "../csv";
 import { Panel } from "../Panel";
-import { type SortDirection, SortHeader, sortableHeaderClass } from "../SortHeader";
+import { SortHeader, useSortState } from "../SortHeader";
 import { useWorldVersion } from "../use-world-version";
 import {
   getCustomerBuyPrice,
@@ -73,8 +73,11 @@ export function MarketOverview({ marketId, anchor, onClose }: MarketOverviewProp
   const centerBurg = market ? getMarketCenterBurg(market) : undefined;
 
   const [nameInput, setNameInput] = useState(() => market?.name ?? "");
-  const [sortKey, setSortKey] = useState<SortKey>("stock");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("down");
+  const { sortKey, sortDirection, handleSort, headerClassName } = useSortState<SortKey>(
+    "stock",
+    "down",
+    key => key === "good"
+  );
 
   // Re-sync the controlled rename input from world state ONLY on an external world
   // change (a legacy edit that bumped the version), not on local typing — renames
@@ -151,18 +154,6 @@ export function MarketOverview({ marketId, anchor, onClose }: MarketOverviewProp
     if (market) renameMarket(market, "");
   }
 
-  // Clicking a header sorts by its column. Re-clicking the active column flips
-  // direction; a fresh column starts ascending for names and descending for
-  // numbers — matching the legacy sort toggle.
-  function handleSort(key: SortKey): void {
-    if (key === sortKey) {
-      setSortDirection(current => (current === "down" ? "up" : "down"));
-      return;
-    }
-    setSortKey(key);
-    setSortDirection(key === "good" ? "up" : "down");
-  }
-
   function handleOpenDeals(): void {
     lazy.marketDealsOverview().then(module => module.open(marketId));
   }
@@ -179,10 +170,6 @@ export function MarketOverview({ marketId, anchor, onClose }: MarketOverviewProp
     });
     const csv = `${[header, ...lines].join("\n")}\n`;
     downloadFile(csv, `${getFileName("Market")}.csv`);
-  }
-
-  function headerClassName(key: SortKey): string {
-    return sortableHeaderClass(key === sortKey, key === "good", sortDirection);
   }
 
   const title = market ? `Market Stock: ${getMarketName(market)}` : "Market Stock";

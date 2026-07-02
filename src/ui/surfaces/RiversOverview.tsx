@@ -7,7 +7,7 @@ import { BulkControls, BulkRowCheckbox, customizationActive, useBulkSelection } 
 import { csvField } from "../csv";
 import { Panel } from "../Panel";
 import { RowIcon } from "../RowIcon";
-import { type SortDirection, SortHeader, sortableHeaderClass } from "../SortHeader";
+import { SortHeader, useSortState } from "../SortHeader";
 import { useWorldVersion } from "../use-world-version";
 import { getRivers, getRiversById, notifyWorldChanged, removeAllRivers, removeRiver } from "../world-state";
 
@@ -89,8 +89,9 @@ export function RiversOverview({ anchor, onClose }: RiversOverviewProps) {
   const worldVersion = useWorldVersion();
 
   const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("discharge");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("down");
+  const { sortKey, sortDirection, handleSort, headerClassName } = useSortState<SortKey>("discharge", "down", key =>
+    ALPHABETICAL_KEYS.has(key)
+  );
   const bulk = useBulkSelection();
 
   const scale = typeof distanceScale === "number" ? distanceScale : 1;
@@ -167,21 +168,6 @@ export function RiversOverview({ anchor, onClose }: RiversOverviewProps) {
       return (numericValue(first) - numericValue(second)) * direction;
     });
   }, [view.rows, sortKey, sortDirection]);
-
-  function handleSort(key: SortKey): void {
-    if (key === sortKey) {
-      setSortDirection(current => (current === "down" ? "up" : "down"));
-      return;
-    }
-    setSortKey(key);
-    // Legacy sortLines: a fresh alphabetical column starts ascending, a fresh
-    // numeric column starts descending.
-    setSortDirection(ALPHABETICAL_KEYS.has(key) ? "up" : "down");
-  }
-
-  function headerClassName(key: SortKey): string {
-    return sortableHeaderClass(key === sortKey, ALPHABETICAL_KEYS.has(key), sortDirection);
-  }
 
   // --- map side-effects (existing globals, guarded for absence) ---
 

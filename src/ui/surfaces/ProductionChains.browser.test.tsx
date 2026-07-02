@@ -205,7 +205,7 @@ describe("<ProductionChains>", () => {
       .filter(animation => (animation as CSSAnimation).animationName === "chains-edge-flow");
     expect(leakedAnimations).toEqual([]);
     // The shared tip was reset.
-    expect((globalScope.tip as ReturnType<typeof vi.fn>).mock.calls.at(-1)).toEqual([""]);
+    expect((globalScope.tip as ReturnType<typeof vi.fn>).mock.calls.at(-1)?.[0]).toBe("");
   });
 
   it("renders a fallback when the world has no production chains", () => {
