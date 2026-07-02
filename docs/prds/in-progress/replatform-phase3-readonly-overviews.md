@@ -259,7 +259,7 @@ bulk bar. Third and last legacy-JS overview; reuses the Slice 3 pattern.
 - [x] Tests per recipe; `.map` round-trip byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 6 — regiments-overview  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 5
 - User stories: 1, 3, 4, 7
 
@@ -270,11 +270,11 @@ bulk-delete using a composite id encoding (stateId + regimentId) delegating to
 groups.
 
 **Acceptance criteria:**
-- [ ] `open(state = -1)` seam preserved; both callers (military-overview, menu) unchanged.
-- [ ] State filter, percentage toggle, and bulk-delete (composite stateId+regimentId ids through
+- [x] `open(state = -1)` seam preserved; both callers (military-overview, menu) unchanged.
+- [x] State filter, percentage toggle, and bulk-delete (composite stateId+regimentId ids through
   `regiments-cascade.ts`, signalling via `notifyWorldChanged()`) reach parity.
-- [ ] The `#armies > g` SVG removal on delete still happens (guarded global side-effect).
-- [ ] Legacy rendering + static markup deleted; tests per recipe; `.map` round-trip
+- [x] The `#armies > g` SVG removal on delete still happens (guarded global side-effect).
+- [x] Legacy rendering + static markup deleted; tests per recipe; `.map` round-trip
   byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 7 — military-overview  [AFK]

@@ -492,6 +492,122 @@ describe("world-state markers-overview reads and mutations", () => {
   });
 });
 
+describe("world-state regiments-overview reads and mutations", () => {
+  // Two states with regiments, one without, plus the neutral pseudo-state and a
+  // removed state — enough to pin the filter/skip semantics and the add mutation.
+  interface StubRegiment {
+    i: number;
+    name: string;
+    a: number;
+    u: Record<string, number>;
+    n: number;
+  }
+  interface StubState {
+    i: number;
+    name: string;
+    removed?: boolean;
+    military?: StubRegiment[];
+  }
+
+  let redState: StubState;
+  let blueState: StubState;
+  let emptyState: StubState;
+  let goneState: StubState;
+
+  beforeEach(() => {
+    redState = {
+      i: 1,
+      name: "Redland",
+      military: [
+        { i: 0, name: "1st Red", a: 100, u: { infantry: 100 }, n: 0 },
+        { i: 1, name: "2nd Red", a: 40, u: { archers: 40 }, n: 0 }
+      ]
+    };
+    blueState = { i: 2, name: "Bluemark", military: [{ i: 0, name: "1st Blue", a: 7, u: { infantry: 7 }, n: 0 }] };
+    emptyState = { i: 3, name: "Quietia", military: [] };
+    goneState = { i: 4, name: "Gonia", removed: true, military: [{ i: 0, name: "Ghosts", a: 5, u: {}, n: 0 }] };
+    globalScope.pack = {
+      states: [{ i: 0, name: "Neutrals" }, redState, blueState, emptyState, goneState],
+      // Cell 0 is land (height 50), cell 1 is water (height 10).
+      cells: {
+        p: [
+          [10, 20],
+          [30, 40]
+        ],
+        h: [50, 10]
+      }
+    };
+    globalScope.options = { military: [{ name: "infantry" }, { name: "archers" }] };
+  });
+
+  afterEach(() => {
+    globalScope.options = undefined;
+    globalScope.Military = undefined;
+    globalScope.notes = undefined;
+  });
+
+  it("lists the valid states (skipping neutrals and removed), or [] with no world", () => {
+    expect(worldState.getStates().map(state => state.name)).toEqual(["Redland", "Bluemark", "Quietia"]);
+    globalScope.pack = undefined;
+    expect(worldState.getStates()).toEqual([]);
+  });
+
+  it("flattens (state, regiment) pairs in pack order, skipping regiment-less states", () => {
+    const rows = worldState.getRegiments();
+    expect(rows.map(row => `${row.state.name}/${row.regiment.name}`)).toEqual([
+      "Redland/1st Red",
+      "Redland/2nd Red",
+      "Bluemark/1st Blue"
+    ]);
+    globalScope.pack = undefined;
+    expect(worldState.getRegiments()).toEqual([]);
+  });
+
+  it("narrows the pairs to one state by id (-1 means all)", () => {
+    expect(worldState.getRegiments(2).map(row => row.regiment.name)).toEqual(["1st Blue"]);
+    expect(worldState.getRegiments(3)).toEqual([]);
+    expect(worldState.getRegiments(-1).length).toBe(3);
+  });
+
+  it("reads the military unit options, or [] when no options are loaded", () => {
+    expect(worldState.getMilitaryUnits().map(unit => unit.name)).toEqual(["infantry", "archers"]);
+    globalScope.options = undefined;
+    expect(worldState.getMilitaryUnits()).toEqual([]);
+  });
+
+  it("adds a regiment: next per-state id, naval flag from cell height, domain name + note", () => {
+    const noted: string[] = [];
+    globalScope.Military = {
+      getName: (regiment: { i: number }) => `Named ${regiment.i}`,
+      generateNote: (regiment: { name: string }, state: { name: string }) =>
+        noted.push(`${state.name}:${regiment.name}`)
+    };
+
+    const landRegiment = worldState.addRegiment(1, 0);
+    expect(landRegiment).toMatchObject({ i: 2, n: 0, x: 10, y: 20, bx: 10, by: 20, state: 1, name: "Named 2" });
+    expect(redState.military?.length).toBe(3);
+    expect(noted).toEqual(["Redland:Named 2"]);
+
+    const navalRegiment = worldState.addRegiment(2, 1);
+    expect(navalRegiment).toMatchObject({ i: 1, n: 1, x: 30, y: 40 });
+  });
+
+  it("initializes a missing military list instead of throwing", () => {
+    const bareState: StubState = { i: 5, name: "Bareland" };
+    (globalScope.pack as { states: unknown[] }).states.push(bareState);
+    const regiment = worldState.addRegiment(5, 0);
+    expect(regiment?.i).toBe(0);
+    expect(bareState.military?.length).toBe(1);
+  });
+
+  it("returns undefined (and mutates nothing) for a missing state or cell", () => {
+    expect(worldState.addRegiment(99, 0)).toBeUndefined();
+    expect(worldState.addRegiment(4, 0)).toBeUndefined(); // removed state
+    expect(worldState.addRegiment(1, 99)).toBeUndefined(); // no such cell
+    expect(redState.military?.length).toBe(2);
+  });
+});
+
 describe("world-state reactivity (subscribe/version)", () => {
   it("bumps the world version on notifyWorldChanged", () => {
     const before = worldState.getWorldVersion();

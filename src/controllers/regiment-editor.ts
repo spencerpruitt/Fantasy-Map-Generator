@@ -1,5 +1,6 @@
 import { type D3DragEvent, drag, easeSinInOut, pointer, select, sum, transition } from "d3";
 import { lazy } from "@/lazy-loaders";
+import { notifyWorldChanged } from "@/ui/world-state";
 import type { Regiment } from "../generators/military-generator";
 import { capitalize, ensureEl, last, rn } from "../utils";
 import { removeRegimentData } from "./regiments-cascade";
@@ -196,7 +197,7 @@ function changeUnit(this: HTMLInputElement): void {
   selectedRegiment.querySelector("text")!.innerHTML = String(Military.getTotal(reg));
 
   refreshMilitaryOverviewIfOpen();
-  refreshRegimentsOverviewIfOpen();
+  notifyWorldChanged(); // the React regiments overview re-reads on this signal
 }
 
 function splitRegiment(): void {
@@ -260,7 +261,7 @@ function splitRegiment(): void {
   Military.generateNote(newReg, pack.states[state]); // add legend
   drawRegiment(newReg, state); // draw new reg below
 
-  refreshRegimentsOverviewIfOpen();
+  notifyWorldChanged(); // the React regiments overview re-reads on this signal
 }
 
 function toggleAdd(): void {
@@ -309,7 +310,7 @@ function addRegimentOnClick(this: SVGGElement, event: MouseEvent): void {
   Military.generateNote(reg, pack.states[state]); // add legend
   drawRegiment(reg, state);
 
-  refreshRegimentsOverviewIfOpen();
+  notifyWorldChanged(); // the React regiments overview re-reads on this signal
   toggleAdd();
 }
 
@@ -443,7 +444,7 @@ function attachRegimentOnClick(this: SVGGElement, event: MouseEvent): void {
   if (index !== -1) notes.splice(index, 1);
   selectedRegiment.remove();
 
-  refreshRegimentsOverviewIfOpen();
+  notifyWorldChanged(); // the React regiments overview re-reads on this signal
   $("#regimentEditor").dialog("close");
   editRegiment(`#${regSelected.id}`);
 }
@@ -484,7 +485,7 @@ function removeRegiment(): void {
         selectedRegiment.remove();
 
         refreshMilitaryOverviewIfOpen();
-        refreshRegimentsOverviewIfOpen();
+        notifyWorldChanged(); // the React regiments overview re-reads on this signal
         $("#regimentEditor").dialog("close");
       },
       Cancel: function () {
@@ -576,12 +577,6 @@ async function refreshMilitaryOverviewIfOpen(): Promise<void> {
   if (!ensureEl("militaryOverview").offsetParent) return;
   const { MilitaryOverview } = await lazy.militaryOverview();
   MilitaryOverview.refresh();
-}
-
-async function refreshRegimentsOverviewIfOpen(): Promise<void> {
-  if (!ensureEl("regimentsOverview").offsetParent) return;
-  const { RegimentsOverview } = await lazy.regimentsOverview();
-  RegimentsOverview.refresh();
 }
 
 export const RegimentEditor = { open: editRegiment };

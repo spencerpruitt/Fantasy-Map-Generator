@@ -1731,8 +1731,7 @@ div.states > div.biomeArea {
 }
 
 #militaryBody div.states > input,
-#militaryBody div.states > div,
-#regimentsBody div.states > div {
+#militaryBody div.states > div {
   width: 5em;
 }
 

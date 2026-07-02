@@ -2,6 +2,7 @@ import type { Burg } from "@/generators/burgs-generator";
 import type { Good } from "@/generators/goods-generator";
 import type { Marker } from "@/generators/markers-generator";
 import type { Deal, Market } from "@/generators/markets-generator";
+import type { Regiment } from "@/generators/military-generator";
 import type { River } from "@/generators/river-generator";
 import type { Route } from "@/generators/routes-generator";
 import type { State } from "@/generators/states-generator";
@@ -354,6 +355,95 @@ export function getMarkerNote(markerId: number): { name: string; legend: string 
  */
 export function removeMarker(markerId: number): void {
   if (typeof Markers !== "undefined" && Markers) Markers.deleteMarker(markerId);
+}
+
+/**
+ * The non-removed real states (`s.i && !s.removed`) in pack order — the option
+ * list the Regiments Overview's state filter renders (the legacy dropdown listed
+ * every valid state, with or without regiments).
+ */
+export function getStates(): State[] {
+  const states = pack?.states;
+  if (!states) return [];
+  return states.filter(state => state.i && !state.removed);
+}
+
+/** A Regiments Overview row source: the owning state and one of its regiments. */
+export interface StateRegiment {
+  state: State;
+  regiment: Regiment;
+}
+
+/**
+ * Every (state, regiment) pair in pack order, optionally narrowed to one state
+ * (`stateFilter` is a state id, or -1 for all — the legacy filter's sentinel).
+ * Skips the neutral pseudo-state, removed states, and states without regiments,
+ * exactly like the legacy overview's render loop.
+ */
+export function getRegiments(stateFilter = -1): StateRegiment[] {
+  const rows: StateRegiment[] = [];
+  for (const state of getStates()) {
+    if (!state.military?.length) continue;
+    if (stateFilter !== -1 && state.i !== stateFilter) continue;
+    for (const regiment of state.military) rows.push({ state, regiment });
+  }
+  return rows;
+}
+
+/**
+ * The configured military unit types (`options.military`), or an empty list when
+ * no options are loaded. Drives the Regiments Overview's per-unit columns.
+ */
+export function getMilitaryUnits(): MilitaryUnit[] {
+  if (typeof options === "undefined" || !options?.military) return [];
+  return options.military;
+}
+
+/**
+ * Create a new empty regiment for a state at a map cell — the data mutation of
+ * the legacy add-regiment click: an id one past the state's last regiment, naval
+ * when the cell is water, named by the domain core (`Military.getName`), pushed
+ * onto the state's military list with a legend note (`Military.generateNote`).
+ * Returns the new regiment so the call site can draw it (`drawRegiment` is the
+ * caller's renderer side-effect) and signal `notifyWorldChanged`. Returns
+ * undefined (no mutation) when the state or cell does not resolve.
+ */
+export function addRegiment(stateId: number, cell: number): Regiment | undefined {
+  const state = pack?.states?.[stateId];
+  const point = pack?.cells?.p?.[cell];
+  if (!state || state.removed || !point) return undefined;
+
+  // The legacy handler assumed `state.military` existed (every generated state
+  // has one); initialize it instead of throwing for a hand-made state that lacks it.
+  if (!state.military) state.military = [];
+  const military = state.military;
+
+  const [x, y] = point;
+  const regimentId = military.length ? military[military.length - 1].i + 1 : 0;
+  const isNaval = +(Number(pack.cells.h[cell]) < 20);
+  const regiment: Regiment = {
+    a: 0,
+    cell,
+    i: regimentId,
+    n: isNaval,
+    u: {},
+    x,
+    y,
+    bx: x,
+    by: y,
+    state: stateId,
+    icon: "🛡️",
+    name: "",
+    t: 0,
+    s: 0,
+    type: ""
+  };
+
+  const militaryModule = typeof Military !== "undefined" ? Military : undefined;
+  if (militaryModule) regiment.name = militaryModule.getName(regiment, military);
+  military.push(regiment);
+  if (militaryModule) militaryModule.generateNote(regiment, state); // add legend
+  return regiment;
 }
 
 /**
