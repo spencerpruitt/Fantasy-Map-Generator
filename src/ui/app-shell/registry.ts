@@ -21,7 +21,13 @@ import type { ComponentType } from "react";
  * Every registered surface id. Adding a surface adds its id here (giving the
  * `open()` seam a compile-time-checked id) and a `registerSurface` call.
  */
-export type SurfaceId = "compare-prices" | "market-overview" | "market-deals" | "trade-details" | "production-overview";
+export type SurfaceId =
+  | "compare-prices"
+  | "market-overview"
+  | "market-deals"
+  | "trade-details"
+  | "production-overview"
+  | "minimap";
 
 /** Props handed to a surface when it is opened. Shape is surface-specific. */
 export type SurfaceProps = Record<string, unknown>;

@@ -2,6 +2,7 @@ import { registerSurface, type SurfaceComponent } from "../app-shell/registry";
 import { ComparePrices } from "./ComparePrices";
 import { MarketDeals } from "./MarketDeals";
 import { MarketOverview } from "./MarketOverview";
+import { Minimap } from "./Minimap";
 import { ProductionOverview } from "./ProductionOverview";
 import { TradeDetails } from "./TradeDetails";
 
@@ -18,3 +19,4 @@ registerSurface("market-overview", MarketOverview as unknown as SurfaceComponent
 registerSurface("market-deals", MarketDeals as unknown as SurfaceComponent);
 registerSurface("trade-details", TradeDetails as unknown as SurfaceComponent);
 registerSurface("production-overview", ProductionOverview as unknown as SurfaceComponent);
+registerSurface("minimap", Minimap as SurfaceComponent);

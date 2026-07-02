@@ -189,7 +189,7 @@ dialog via `alertMessage.innerHTML` — convert it to a real registered `<Panel>
 - [x] `tsc`, `biome`, vitest (node + browser), and playwright are green.
 
 ### Slice 2 — minimap  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 1
 - User stories: 1, 3, 4
 
@@ -199,11 +199,11 @@ rect, with click-to-pan via `zoomTo` and a `window.updateMinimap` hook. Today it
 markup and styles dynamically.
 
 **Acceptance criteria:**
-- [ ] `openMinimapDialog()` (seam preserved) opens the minimap in a `<Panel>`.
-- [ ] The `<use href="#viewbox">` mirror, viewport rect, and click-to-pan (`zoomTo`, called
+- [x] `openMinimapDialog()` (seam preserved) opens the minimap in a `<Panel>`.
+- [x] The `<use href="#viewbox">` mirror, viewport rect, and click-to-pan (`zoomTo`, called
   guarded) reach parity; the `window.updateMinimap` hook keeps working.
-- [ ] Legacy dynamic markup/styles are deleted.
-- [ ] Tests per recipe; `.map` round-trip byte-identical; `tsc`/`biome`/vitest/playwright green.
+- [x] Legacy dynamic markup/styles are deleted.
+- [x] Tests per recipe; `.map` round-trip byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 3 — routes-overview  [AFK]
 - Status: todo
