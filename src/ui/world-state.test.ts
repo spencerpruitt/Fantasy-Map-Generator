@@ -393,6 +393,105 @@ describe("world-state rivers-overview reads and mutations", () => {
   });
 });
 
+describe("world-state markers-overview reads and mutations", () => {
+  // Minimal marker stubs: a plain marker, a pinned one, and a locked one —
+  // enough to pin the read shape and the delete-the-property flag semantics.
+  interface StubMarker {
+    i: number;
+    type: string;
+    icon: string;
+    x: number;
+    y: number;
+    cell: number;
+    pinned?: boolean;
+    lock?: boolean;
+  }
+
+  let volcano: StubMarker;
+  let battlefield: StubMarker;
+  let shrine: StubMarker;
+
+  beforeEach(() => {
+    volcano = { i: 0, type: "volcanoes", icon: "🌋", x: 10, y: 20, cell: 1 };
+    battlefield = { i: 1, type: "battlefields", icon: "⚔️", x: 30, y: 40, cell: 2, pinned: true };
+    shrine = { i: 2, type: "shrines", icon: "🛐", x: 50, y: 60, cell: 3, lock: true };
+    (globalScope.pack as { markers?: unknown }).markers = [volcano, battlefield, shrine];
+    globalScope.notes = [{ id: "marker0", name: "Mount Doom", legend: "An angry volcano" }];
+  });
+
+  afterEach(() => {
+    globalScope.notes = undefined;
+    globalScope.Markers = undefined;
+  });
+
+  it("reads the markers list, or an empty list when no world is loaded", () => {
+    expect(worldState.getMarkers()).toEqual([volcano, battlefield, shrine]);
+    globalScope.pack = undefined;
+    expect(worldState.getMarkers()).toEqual([]);
+  });
+
+  it("projects the marker-type options from the domain config", () => {
+    globalScope.Markers = {
+      getConfig: () => [
+        { type: "volcanoes", icon: "🌋", min: 10, each: 500 },
+        { type: "battlefields", icon: "⚔️", min: 50, each: 700 }
+      ]
+    };
+    expect(worldState.getMarkerTypes()).toEqual([
+      { type: "volcanoes", icon: "🌋" },
+      { type: "battlefields", icon: "⚔️" }
+    ]);
+    globalScope.Markers = undefined;
+    expect(worldState.getMarkerTypes()).toEqual([]);
+  });
+
+  it("pins a marker and DELETES the flag on unpin, without broadcasting", () => {
+    let notified = 0;
+    const unsubscribe = worldState.subscribeWorld(() => {
+      notified += 1;
+    });
+
+    worldState.setMarkerPinned(volcano as never, true);
+    expect(volcano.pinned).toBe(true);
+    worldState.setMarkerPinned(volcano as never, false);
+    // The property is deleted, not set to false, so `.map` saves are unchanged.
+    expect("pinned" in volcano).toBe(false);
+    expect(notified).toBe(0);
+    unsubscribe();
+  });
+
+  it("locks a marker and DELETES the flag on unlock, without broadcasting", () => {
+    let notified = 0;
+    const unsubscribe = worldState.subscribeWorld(() => {
+      notified += 1;
+    });
+
+    worldState.setMarkerLock(volcano as never, true);
+    expect(volcano.lock).toBe(true);
+    worldState.setMarkerLock(volcano as never, false);
+    expect("lock" in volcano).toBe(false);
+    expect(notified).toBe(0);
+    unsubscribe();
+  });
+
+  it("finds a marker's note by its element id, or undefined without one", () => {
+    expect(worldState.getMarkerNote(0)).toEqual({ id: "marker0", name: "Mount Doom", legend: "An angry volcano" });
+    expect(worldState.getMarkerNote(1)).toBeUndefined();
+    globalScope.notes = undefined;
+    expect(worldState.getMarkerNote(0)).toBeUndefined();
+  });
+
+  it("removes a marker through the domain core (Markers.deleteMarker)", () => {
+    const removed: number[] = [];
+    globalScope.Markers = { deleteMarker: (id: number) => removed.push(id) };
+    worldState.removeMarker(1);
+    expect(removed).toEqual([1]);
+    // Guarded: absent Markers module is a no-op, not a throw.
+    globalScope.Markers = undefined;
+    expect(() => worldState.removeMarker(1)).not.toThrow();
+  });
+});
+
 describe("world-state reactivity (subscribe/version)", () => {
   it("bumps the world version on notifyWorldChanged", () => {
     const before = worldState.getWorldVersion();

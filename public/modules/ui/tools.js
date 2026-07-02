@@ -634,7 +634,8 @@ function regenerateMarkers() {
   Markers.regenerate();
   turnButtonOn("toggleMarkers");
   drawMarkers();
-  if (ensureEl("markersOverviewRefresh").offsetParent) markersOverviewRefresh.click();
+  // the button lives in the React Markers Overview panel, so it only exists while the panel is open
+  findEl("markersOverviewRefresh")?.click();
 }
 
 function regenerateZones(event) {
@@ -907,7 +908,8 @@ function toggleAddMarker() {
 
   addFeature.querySelectorAll("button.pressed").forEach(b => b.classList.remove("pressed"));
   addMarker.classList.add("pressed");
-  markersAddFromOverview.classList.add("pressed");
+  // the mirror button lives in the React Markers Overview panel, so it only exists while the panel is open
+  findEl("markersAddFromOverview")?.classList.add("pressed");
 
   viewbox.style("cursor", "crosshair").on("click", addMarkerOnClick);
   tip("Click on map to add a marker. Hold Shift to add multiple", true);
@@ -927,7 +929,8 @@ function addMarkerOnClick() {
   const isMarkerSelected = markers.length && elSelected?.node()?.parentElement?.id === "markers";
   const selectedMarker = isMarkerSelected ? markers.find(marker => marker.i === +elSelected.attr("id").slice(6)) : null;
 
-  const selectedType = ensureEl("addedMarkerType").value;
+  // the hidden type input lives in the React Markers Overview panel; default to no type when it is closed
+  const selectedType = findEl("addedMarkerType")?.value || "";
   const selectedConfig = Markers.getConfig().find(({ type }) => type === selectedType);
 
   const baseMarker = selectedMarker || selectedConfig || { icon: "❓" };
@@ -943,7 +946,7 @@ function addMarkerOnClick() {
 
   if (d3.event.shiftKey === false) {
     ensureEl("markerAdd").classList.remove("pressed");
-    ensureEl("markersAddFromOverview").classList.remove("pressed");
+    findEl("markersAddFromOverview")?.classList.remove("pressed");
     unpressClickToAddButton();
   }
 }

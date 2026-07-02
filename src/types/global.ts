@@ -285,6 +285,11 @@ declare global {
   var createRiver: () => void;
   var toggleAddRiver: () => void;
   var overviewRivers: () => void;
+  var toggleMarkers: (event?: MouseEvent) => void;
+  var editMarker: (markerId: number) => void;
+  var regenerateMarkers: () => void;
+  var configMarkersGeneration: () => void;
+  var overviewMarkers: () => void;
   var fog: (id: string, path: string) => void;
   var unfog: (id?: string) => void;
   var overviewBurgs: (options: { stateId: number }) => void;

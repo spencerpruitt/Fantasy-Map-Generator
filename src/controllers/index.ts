@@ -12,3 +12,6 @@ window.overviewRoutes = () => {
 window.overviewRivers = () => {
   lazy.riversOverview().then(module => module.open());
 };
+window.overviewMarkers = () => {
+  lazy.markersOverview().then(module => module.open());
+};

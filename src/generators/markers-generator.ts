@@ -17,6 +17,7 @@ export interface Marker {
   px?: number;
   cell: number;
   lock?: boolean;
+  pinned?: boolean;
 }
 
 type MarkerConfig = {

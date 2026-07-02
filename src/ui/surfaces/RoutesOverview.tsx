@@ -4,8 +4,10 @@ import type { CascadeSummary } from "@/controllers/bulk-action/bulk-entity-adapt
 import type { Route } from "@/generators/routes-generator";
 import { rn } from "@/utils/numberUtils";
 import { plural } from "@/utils/stringUtils";
+import { BulkControls, BulkRowCheckbox, customizationActive, useBulkSelection } from "../bulk-selection";
 import { csvField } from "../csv";
 import { Panel } from "../Panel";
+import { LOCKED_TIP, RowIcon, UNLOCKED_TIP } from "../RowIcon";
 import { type SortDirection, SortHeader, sortableHeaderClass } from "../SortHeader";
 import { useWorldVersion } from "../use-world-version";
 import {
@@ -41,39 +43,6 @@ interface RouteRow {
   locked: boolean;
 }
 
-// The tips `showElementLockTip` showed on hover, reproduced as static data-tip
-// strings (the global tooltip handler reads data-tip on mousemove).
-const LOCKED_TIP = "Locked. Click to unlock the element and allow it to be changed by regeneration tools";
-const UNLOCKED_TIP = "Unlocked. Click to lock the element and prevent changes to it by regeneration tools";
-
-/** True while a customization/manual-assignment mode is active (guarded read of the legacy global). */
-function customizationActive(): boolean {
-  return typeof customization !== "undefined" && Boolean(customization);
-}
-
-/**
- * A legacy-look icon action rendered inside a `.states` row. Stays a `<span>`
- * (not a `<button>`) so the `.states > [class^="icon-"]` row CSS applies
- * unchanged; the role/tabIndex/keydown give it button semantics.
- */
-function RowIcon(props: { className: string; tip: string; label: string; onClick: () => void }) {
-  const { className, tip, label, onClick } = props;
-  return (
-    // biome-ignore lint/a11y/useSemanticElements: must stay a <span> so the legacy `.states` row CSS lays it out; the keyboard handler gives it button semantics.
-    <span
-      role="button"
-      tabIndex={0}
-      className={className}
-      data-tip={tip}
-      aria-label={label}
-      onClick={onClick}
-      onKeyDown={event => {
-        if (event.key === "Enter" || event.key === " ") onClick();
-      }}
-    />
-  );
-}
-
 /**
  * RoutesOverview — the Routes Overview surface, at parity with the legacy
  * `public/modules/ui/routes-overview.js` jQuery-UI dialog (the first legacy-JS
@@ -85,8 +54,8 @@ function RowIcon(props: { className: string; tip: string; label: string; onClick
  * and signal `notifyWorldChanged()` here, at the call site. Map side-effects
  * (route highlight, zoom-to-route, the route editor and creator) call the
  * existing globals, guarded for absence. The legacy `window.bulkBars` DOM-glue
- * bar is replaced by the in-surface bulk mode below (same controls, React
- * state instead of DOM mutation) — the shared React bulk bar remains Phase 4.
+ * bar is replaced by the shared in-surface bulk mode (`../bulk-selection`) —
+ * the cross-surface mutate/redraw bulk machinery remains Phase 4.
  */
 export function RoutesOverview({ anchor, onClose }: RoutesOverviewProps) {
   const [refreshCount, refresh] = useReducer(count => count + 1, 0);
@@ -95,8 +64,7 @@ export function RoutesOverview({ anchor, onClose }: RoutesOverviewProps) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("length");
   const [sortDirection, setSortDirection] = useState<SortDirection>("down");
-  const [bulkMode, setBulkMode] = useState(false);
-  const [selected, setSelected] = useState<ReadonlySet<number>>(new Set());
+  const bulk = useBulkSelection();
 
   const scale = typeof distanceScale === "number" ? distanceScale : 1;
   const unit = typeof distanceUnitInput !== "undefined" && distanceUnitInput ? distanceUnitInput.value : "";
@@ -281,38 +249,9 @@ export function RoutesOverview({ anchor, onClose }: RoutesOverviewProps) {
     });
   }
 
-  // --- bulk mode (replaces the legacy window.bulkBars DOM-glue for this surface) ---
-
-  function toggleBulkMode(): void {
-    setBulkMode(current => {
-      if (current) setSelected(new Set());
-      return !current;
-    });
-  }
-
-  function toggleSelected(id: number): void {
-    setSelected(current => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
+  // --- bulk mode (the shared in-surface bulk selection; see ../bulk-selection) ---
 
   const visibleIds = sortedRows.map(row => row.id);
-  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selected.has(id));
-
-  function handleSelectAll(): void {
-    setSelected(current => {
-      const next = new Set(current);
-      if (allVisibleSelected) {
-        for (const id of visibleIds) next.delete(id);
-      } else {
-        for (const id of visibleIds) next.add(id);
-      }
-      return next;
-    });
-  }
 
   function describeCascade(ids: number[]): CascadeSummary {
     const routeById = new Map(getRoutes().map(route => [route.i, route]));
@@ -326,7 +265,7 @@ export function RoutesOverview({ anchor, onClose }: RoutesOverviewProps) {
     // Never mutate the pack while a manual-assignment/regeneration mode is
     // active (same guard the legacy bulk bar had).
     if (customizationActive()) return;
-    const ids = [...selected];
+    const ids = [...bulk.selected];
     bulkDeleteConfirm({
       typeLabel: "routes",
       describe: () => describeCascade(ids),
@@ -339,7 +278,7 @@ export function RoutesOverview({ anchor, onClose }: RoutesOverviewProps) {
           removeRoute(route);
           deletedIds.push(id);
         }
-        setSelected(current => new Set([...current].filter(id => !deletedIds.includes(id))));
+        bulk.pruneSelected(id => !deletedIds.includes(id));
         notifyWorldChanged();
       }
     });
@@ -348,7 +287,7 @@ export function RoutesOverview({ anchor, onClose }: RoutesOverviewProps) {
   function handleBulkLock(locked: boolean): void {
     if (customizationActive()) return;
     const routeById = new Map(getRoutes().map(route => [route.i, route]));
-    for (const id of selected) {
+    for (const id of bulk.selected) {
       const route = routeById.get(id);
       if (route) setRouteLock(route, locked);
     }
@@ -404,15 +343,7 @@ export function RoutesOverview({ anchor, onClose }: RoutesOverviewProps) {
             onMouseEnter={() => handleHighlightOn(row.id)}
             onMouseLeave={() => handleHighlightOff(row.id)}
           >
-            {bulkMode && (
-              <input
-                type="checkbox"
-                className="bulkRowCheckbox native"
-                aria-label={`Select ${row.name}`}
-                checked={selected.has(row.id)}
-                onChange={() => toggleSelected(row.id)}
-              />
-            )}
+            <BulkRowCheckbox selection={bulk} id={row.id} label={`Select ${row.name}`} />
             <RowIcon
               className="icon-target"
               tip="Locate the route"
@@ -491,52 +422,13 @@ export function RoutesOverview({ anchor, onClose }: RoutesOverviewProps) {
           aria-label="Remove all unlocked routes"
           onClick={handleRemoveAll}
         />
-        <button
-          type="button"
-          data-tip="Bulk select: pick multiple rows, then delete/lock/recolor at once"
-          className={`bulkToggle ${bulkMode ? "icon-ok-squared active" : "icon-check-empty"}`}
-          aria-pressed={bulkMode}
-          aria-label="Bulk select"
-          onClick={toggleBulkMode}
+        <BulkControls
+          selection={bulk}
+          visibleIds={visibleIds}
+          onDelete={handleBulkDelete}
+          onLock={() => handleBulkLock(true)}
+          onUnlock={() => handleBulkLock(false)}
         />
-        {bulkMode && (
-          <span className="bulkInline">
-            <label className="bulkSelectAll" data-tip="Select or deselect all visible rows">
-              <input
-                type="checkbox"
-                className="bulkSelectAllCheckbox native"
-                checked={allVisibleSelected}
-                ref={element => {
-                  if (element) element.indeterminate = selected.size > 0 && !allVisibleSelected;
-                }}
-                onChange={handleSelectAll}
-              />{" "}
-              All
-            </label>
-            <span className="bulkCount">{selected.size} selected</span>
-            <button
-              type="button"
-              className="bulkDelete icon-trash"
-              data-tip="Delete selected rows"
-              aria-label="Delete selected rows"
-              onClick={handleBulkDelete}
-            />
-            <button
-              type="button"
-              className="bulkLock icon-lock"
-              data-tip="Lock selected rows (protects from regeneration and bulk delete)"
-              aria-label="Lock selected rows"
-              onClick={() => handleBulkLock(true)}
-            />
-            <button
-              type="button"
-              className="bulkUnlock icon-lock-open"
-              data-tip="Unlock selected rows"
-              aria-label="Unlock selected rows"
-              onClick={() => handleBulkLock(false)}
-            />
-          </span>
-        )}
         <label data-tip="Filter by name or group" style={{ marginLeft: "0.2em" }}>
           Search: <input type="search" value={search} onChange={event => setSearch(event.target.value)} />
         </label>

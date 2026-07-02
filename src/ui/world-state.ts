@@ -1,5 +1,6 @@
 import type { Burg } from "@/generators/burgs-generator";
 import type { Good } from "@/generators/goods-generator";
+import type { Marker } from "@/generators/markers-generator";
 import type { Deal, Market } from "@/generators/markets-generator";
 import type { River } from "@/generators/river-generator";
 import type { Route } from "@/generators/routes-generator";
@@ -297,6 +298,62 @@ export function removeAllRivers(): void {
   if (!pack) return;
   pack.rivers = [];
   pack.cells.r = new Uint16Array(pack.cells.i.length);
+}
+
+/** The full markers list (`pack.markers`), or an empty list if no world is loaded. */
+export function getMarkers(): Marker[] {
+  return pack?.markers ?? [];
+}
+
+/**
+ * The marker-type options (type + icon) from the domain config
+ * (`Markers.getConfig`), or an empty list when the module is absent. The
+ * Markers Overview populates its add-marker type selector from this.
+ */
+export function getMarkerTypes(): { type: string; icon: string }[] {
+  if (typeof Markers === "undefined" || !Markers) return [];
+  return Markers.getConfig().map(({ type, icon }) => ({ type, icon }));
+}
+
+/**
+ * Pin or unpin a marker. Unpinning DELETES the property instead of writing
+ * `pinned: false` (legacy parity — the flag is only ever present-true, so
+ * `.map` saves never gain a false flag). The mutating call site signals
+ * `notifyWorldChanged` and syncs the `#markers` group's `pinned` attribute.
+ */
+export function setMarkerPinned(marker: Marker, pinned: boolean): void {
+  if (pinned) marker.pinned = true;
+  else delete marker.pinned;
+}
+
+/**
+ * Lock or unlock a marker. Unlocking DELETES the property (same shape as the
+ * legacy row toggle and the bulk adapter). The mutating call site signals
+ * `notifyWorldChanged`.
+ */
+export function setMarkerLock(marker: Marker, lock: boolean): void {
+  if (lock) marker.lock = true;
+  else delete marker.lock;
+}
+
+/**
+ * A marker's note (name + legend text) from the global notes list, or
+ * undefined when it has none (or no world is loaded). Notes are keyed by the
+ * `marker{i}` element id.
+ */
+export function getMarkerNote(markerId: number): { name: string; legend: string } | undefined {
+  if (typeof notes === "undefined" || !notes) return undefined;
+  return notes.find(note => note.id === `marker${markerId}`);
+}
+
+/**
+ * Remove a marker through the domain core (`Markers.deleteMarker`), which drops
+ * it from `pack.markers` and drops its note. Removing the marker's SVG element
+ * is the caller's renderer side-effect, and the call site signals
+ * `notifyWorldChanged`.
+ */
+export function removeMarker(markerId: number): void {
+  if (typeof Markers !== "undefined" && Markers) Markers.deleteMarker(markerId);
 }
 
 /**

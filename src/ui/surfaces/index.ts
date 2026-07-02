@@ -1,5 +1,6 @@
 import { registerSurface, type SurfaceComponent } from "../app-shell/registry";
 import { ComparePrices } from "./ComparePrices";
+import { MarkersOverview } from "./MarkersOverview";
 import { MarketDeals } from "./MarketDeals";
 import { MarketOverview } from "./MarketOverview";
 import { Minimap } from "./Minimap";
@@ -24,3 +25,4 @@ registerSurface("production-overview", ProductionOverview as unknown as SurfaceC
 registerSurface("minimap", Minimap as SurfaceComponent);
 registerSurface("routes-overview", RoutesOverview as SurfaceComponent);
 registerSurface("rivers-overview", RiversOverview as SurfaceComponent);
+registerSurface("markers-overview", MarkersOverview as SurfaceComponent);

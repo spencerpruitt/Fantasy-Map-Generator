@@ -29,7 +29,8 @@ export type SurfaceId =
   | "production-overview"
   | "minimap"
   | "routes-overview"
-  | "rivers-overview";
+  | "rivers-overview"
+  | "markers-overview";
 
 /** Props handed to a surface when it is opened. Shape is surface-specific. */
 export type SurfaceProps = Record<string, unknown>;

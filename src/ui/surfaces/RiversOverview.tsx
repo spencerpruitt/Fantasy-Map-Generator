@@ -3,8 +3,10 @@ import { bulkDeleteConfirm } from "@/controllers/bulk-action/bulk-delete-confirm
 import type { CascadeSummary } from "@/controllers/bulk-action/bulk-entity-adapter";
 import { rn } from "@/utils/numberUtils";
 import { plural } from "@/utils/stringUtils";
+import { BulkControls, BulkRowCheckbox, customizationActive, useBulkSelection } from "../bulk-selection";
 import { csvField } from "../csv";
 import { Panel } from "../Panel";
+import { RowIcon } from "../RowIcon";
 import { type SortDirection, SortHeader, sortableHeaderClass } from "../SortHeader";
 import { useWorldVersion } from "../use-world-version";
 import { getRivers, getRiversById, notifyWorldChanged, removeAllRivers, removeRiver } from "../world-state";
@@ -53,39 +55,11 @@ const BASIN_COLORS = [
   "#17becf"
 ];
 
-/** True while a customization/manual-assignment mode is active (guarded read of the legacy global). */
-function customizationActive(): boolean {
-  return typeof customization !== "undefined" && Boolean(customization);
-}
-
 /** rn(mean(values)) || 0 — the legacy footer-average shape (0 for an empty list). */
 function roundedMean(values: number[], decimals = 0): number {
   if (!values.length) return 0;
   const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
   return rn(mean, decimals) || 0;
-}
-
-/**
- * A legacy-look icon action rendered inside a `.states` row. Stays a `<span>`
- * (not a `<button>`) so the `.states > [class^="icon-"]` row CSS applies
- * unchanged; the role/tabIndex/keydown give it button semantics.
- */
-function RowIcon(props: { className: string; tip: string; label: string; onClick: () => void }) {
-  const { className, tip, label, onClick } = props;
-  return (
-    // biome-ignore lint/a11y/useSemanticElements: must stay a <span> so the legacy `.states` row CSS lays it out; the keyboard handler gives it button semantics.
-    <span
-      role="button"
-      tabIndex={0}
-      className={className}
-      data-tip={tip}
-      aria-label={label}
-      onClick={onClick}
-      onKeyDown={event => {
-        if (event.key === "Enter" || event.key === " ") onClick();
-      }}
-    />
-  );
 }
 
 /**
@@ -101,9 +75,9 @@ function RowIcon(props: { className: string; tip: string; label: string; onClick
  * like the legacy dialog and its bulk adapter — no lock actions exist. Map
  * side-effects (river highlight, zoom-to-river, basin highlight, the river
  * editor/creator, add-on-click) call the existing globals, guarded for
- * absence. The legacy `window.bulkBars` DOM-glue bar is replaced by the
- * in-surface bulk mode below (same select + delete controls, React state
- * instead of DOM mutation) — the shared React bulk bar remains Phase 4.
+ * absence. The legacy `window.bulkBars` DOM-glue bar is replaced by the shared
+ * in-surface bulk mode (`../bulk-selection`, select + delete only here) — the
+ * cross-surface mutate/redraw bulk machinery remains Phase 4.
  *
  * The Refresh and add-on-click buttons keep their legacy ids
  * (`riversOverviewRefresh`, `addNewRiver`) because tools.js' add-river flow
@@ -117,8 +91,7 @@ export function RiversOverview({ anchor, onClose }: RiversOverviewProps) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("discharge");
   const [sortDirection, setSortDirection] = useState<SortDirection>("down");
-  const [bulkMode, setBulkMode] = useState(false);
-  const [selected, setSelected] = useState<ReadonlySet<number>>(new Set());
+  const bulk = useBulkSelection();
 
   const scale = typeof distanceScale === "number" ? distanceScale : 1;
   const unit = typeof distanceUnitInput !== "undefined" && distanceUnitInput ? distanceUnitInput.value : "";
@@ -296,38 +269,9 @@ export function RiversOverview({ anchor, onClose }: RiversOverviewProps) {
     });
   }
 
-  // --- bulk mode (replaces the legacy window.bulkBars DOM-glue for this surface) ---
-
-  function toggleBulkMode(): void {
-    setBulkMode(current => {
-      if (current) setSelected(new Set());
-      return !current;
-    });
-  }
-
-  function toggleSelected(id: number): void {
-    setSelected(current => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
+  // --- bulk mode (the shared in-surface bulk selection; see ../bulk-selection) ---
 
   const visibleIds = sortedRows.map(row => row.id);
-  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selected.has(id));
-
-  function handleSelectAll(): void {
-    setSelected(current => {
-      const next = new Set(current);
-      if (allVisibleSelected) {
-        for (const id of visibleIds) next.delete(id);
-      } else {
-        for (const id of visibleIds) next.add(id);
-      }
-      return next;
-    });
-  }
 
   // Removing a river also removes every river whose parent or basin it is, so
   // the summary counts that union — not just the selected rows (the same
@@ -355,7 +299,7 @@ export function RiversOverview({ anchor, onClose }: RiversOverviewProps) {
     // Never mutate the pack while a manual-assignment/regeneration mode is
     // active (same guard the legacy bulk bar had).
     if (customizationActive()) return;
-    const ids = [...selected];
+    const ids = [...bulk.selected];
     bulkDeleteConfirm({
       typeLabel: "rivers",
       describe: () => describeCascade(ids),
@@ -365,7 +309,7 @@ export function RiversOverview({ anchor, onClose }: RiversOverviewProps) {
         // tributary is safe.
         for (const id of ids) removeRiver(id);
         const remainingIds = new Set(getRivers().map(river => river.i));
-        setSelected(current => new Set([...current].filter(id => remainingIds.has(id))));
+        bulk.pruneSelected(id => remainingIds.has(id));
         notifyWorldChanged();
       }
     });
@@ -452,15 +396,7 @@ export function RiversOverview({ anchor, onClose }: RiversOverviewProps) {
             onMouseEnter={() => handleHighlightOn(row.id)}
             onMouseLeave={() => handleHighlightOff(row.id)}
           >
-            {bulkMode && (
-              <input
-                type="checkbox"
-                className="bulkRowCheckbox native"
-                aria-label={`Select ${row.name}`}
-                checked={selected.has(row.id)}
-                onChange={() => toggleSelected(row.id)}
-              />
-            )}
+            <BulkRowCheckbox selection={bulk} id={row.id} label={`Select ${row.name}`} />
             <RowIcon
               className="icon-target"
               tip="Locate the river"
@@ -560,38 +496,12 @@ export function RiversOverview({ anchor, onClose }: RiversOverviewProps) {
           aria-label="Remove all rivers"
           onClick={handleRemoveAll}
         />
-        <button
-          type="button"
-          data-tip="Bulk select: pick multiple rows, then delete at once"
-          className={`bulkToggle ${bulkMode ? "icon-ok-squared active" : "icon-check-empty"}`}
-          aria-pressed={bulkMode}
-          aria-label="Bulk select"
-          onClick={toggleBulkMode}
+        <BulkControls
+          selection={bulk}
+          visibleIds={visibleIds}
+          toggleTip="Bulk select: pick multiple rows, then delete at once"
+          onDelete={handleBulkDelete}
         />
-        {bulkMode && (
-          <span className="bulkInline">
-            <label className="bulkSelectAll" data-tip="Select or deselect all visible rows">
-              <input
-                type="checkbox"
-                className="bulkSelectAllCheckbox native"
-                checked={allVisibleSelected}
-                ref={element => {
-                  if (element) element.indeterminate = selected.size > 0 && !allVisibleSelected;
-                }}
-                onChange={handleSelectAll}
-              />{" "}
-              All
-            </label>
-            <span className="bulkCount">{selected.size} selected</span>
-            <button
-              type="button"
-              className="bulkDelete icon-trash"
-              data-tip="Delete selected rows"
-              aria-label="Delete selected rows"
-              onClick={handleBulkDelete}
-            />
-          </span>
-        )}
         <label data-tip="Filter by name, type or basin" style={{ marginLeft: "0.2em" }}>
           Search: <input type="search" value={search} onChange={event => setSearch(event.target.value)} />
         </label>

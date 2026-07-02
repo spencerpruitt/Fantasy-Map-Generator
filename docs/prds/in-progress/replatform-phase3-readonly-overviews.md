@@ -243,7 +243,7 @@ Slice 3 established.
 - [x] Tests per recipe; `.map` round-trip byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 5 — markers-overview  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 4
 - User stories: 1, 3, 4, 5, 7
 
@@ -252,11 +252,11 @@ Slice 3 established.
 bulk bar. Third and last legacy-JS overview; reuses the Slice 3 pattern.
 
 **Acceptance criteria:**
-- [ ] Thin TS controller seam; `overviewMarkers()` callers unchanged.
-- [ ] Marker-type selector, pin/lock invert toggles, search filter, and bulk row-actions reach
+- [x] Thin TS controller seam; `overviewMarkers()` callers unchanged.
+- [x] Marker-type selector, pin/lock invert toggles, search filter, and bulk row-actions reach
   parity, signalling via `notifyWorldChanged()`.
-- [ ] `public/modules/ui/markers-overview.js` and its static markup are deleted in this slice.
-- [ ] Tests per recipe; `.map` round-trip byte-identical; `tsc`/`biome`/vitest/playwright green.
+- [x] `public/modules/ui/markers-overview.js` and its static markup are deleted in this slice.
+- [x] Tests per recipe; `.map` round-trip byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 6 — regiments-overview  [AFK]
 - Status: todo

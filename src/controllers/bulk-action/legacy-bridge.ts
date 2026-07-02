@@ -1,5 +1,4 @@
 import { createBurgsAdapter } from "./adapters/burgs-adapter";
-import { createMarkersAdapter } from "./adapters/markers-adapter";
 import { createProvincesAdapter } from "./adapters/provinces-adapter";
 import { createZonesAdapter } from "./adapters/zones-adapter";
 import { BulkActionBar } from "./bulk-action-bar";
@@ -17,12 +16,12 @@ import type { BulkEntityAdapter } from "./bulk-entity-adapter";
 
 type AdapterFactory = (redraw: () => void) => BulkEntityAdapter;
 
-// The routes and rivers menus converted to React (their surfaces own bulk mode
-// natively); their adapters are gone. Remaining entries die as their menus convert.
+// The routes, rivers, and markers menus converted to React (their surfaces own
+// bulk mode natively — see src/ui/bulk-selection.tsx); their adapters are gone.
+// Remaining entries die as their menus convert.
 const factories: Record<string, AdapterFactory> = {
   burgs: createBurgsAdapter,
   provinces: createProvincesAdapter,
-  markers: createMarkersAdapter,
   zones: createZonesAdapter
 };
 

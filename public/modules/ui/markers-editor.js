@@ -249,7 +249,8 @@ function editMarker(markerI) {
     Markers.deleteMarker(marker.i);
     element.remove();
     $("#markerEditor").dialog("close");
-    if (ensureEl("markersOverviewRefresh").offsetParent) markersOverviewRefresh.click();
+    // the button lives in the React Markers Overview panel, so it only exists while the panel is open
+    findEl("markersOverviewRefresh")?.click();
   }
 
   function closeMarkerEditor() {

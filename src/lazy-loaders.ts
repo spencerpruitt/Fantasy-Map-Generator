@@ -16,6 +16,7 @@ export const lazy = {
   hierarchyTree: () => import("@/controllers/hierarchy-tree"),
   installation: () => import("@/services/installation"),
   load: () => import("@/io/load"),
+  markersOverview: () => import("@/controllers/markers-overview"),
   marketDealsOverview: () => import("@/controllers/market-deals-overview"),
   marketOverview: () => import("@/controllers/market-overview"),
   marketsOverview: () => import("@/controllers/markets-overview"),
