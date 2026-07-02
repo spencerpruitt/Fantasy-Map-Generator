@@ -190,7 +190,8 @@ function regenerateStates() {
 
   if (ensureEl("burgsOverviewRefresh").offsetParent) burgsOverviewRefresh.click();
   if (document.getElementById("statesEditorRefresh")?.offsetParent) statesEditorRefresh.click();
-  if (ensureEl("militaryOverviewRefresh").offsetParent) militaryOverviewRefresh.click();
+  // the button lives in the React Military Overview panel, so it only exists while the panel is open
+  findEl("militaryOverviewRefresh")?.click();
 }
 
 function recreateStates() {
@@ -621,7 +622,8 @@ function regenerateMilitary() {
   if (layerIsOn("toggleMilitary")) drawMilitary();
   else toggleMilitary();
 
-  if (ensureEl("militaryOverviewRefresh").offsetParent) militaryOverviewRefresh.click();
+  // the button lives in the React Military Overview panel, so it only exists while the panel is open
+  findEl("militaryOverviewRefresh")?.click();
 }
 
 function regenerateIce() {

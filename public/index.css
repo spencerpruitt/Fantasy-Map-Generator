@@ -1726,15 +1726,6 @@ div.states > div.biomeArea {
   width: 5em;
 }
 
-#militaryBody div.states > input {
-  -moz-appearance: textfield;
-}
-
-#militaryBody div.states > input,
-#militaryBody div.states > div {
-  width: 5em;
-}
-
 #emblemBody > div {
   padding: 1px 3px;
   transition: all 0.3s ease-out;

@@ -196,8 +196,7 @@ function changeUnit(this: HTMLInputElement): void {
   reg.a = sum(Object.values(reg.u));
   selectedRegiment.querySelector("text")!.innerHTML = String(Military.getTotal(reg));
 
-  refreshMilitaryOverviewIfOpen();
-  notifyWorldChanged(); // the React regiments overview re-reads on this signal
+  notifyWorldChanged(); // the React regiments and military overviews re-read on this signal
 }
 
 function splitRegiment(): void {
@@ -484,8 +483,7 @@ function removeRegiment(): void {
         removeRegimentData(stateId, reg.i);
         selectedRegiment.remove();
 
-        refreshMilitaryOverviewIfOpen();
-        notifyWorldChanged(); // the React regiments overview re-reads on this signal
+        notifyWorldChanged(); // the React regiments and military overviews re-read on this signal
         $("#regimentEditor").dialog("close");
       },
       Cancel: function () {
@@ -571,12 +569,6 @@ function closeEditor(): void {
   ensureEl("regimentAttach").classList.remove("pressed");
   restoreDefaultEvents();
   selectedRegiment = null;
-}
-
-async function refreshMilitaryOverviewIfOpen(): Promise<void> {
-  if (!ensureEl("militaryOverview").offsetParent) return;
-  const { MilitaryOverview } = await lazy.militaryOverview();
-  MilitaryOverview.refresh();
 }
 
 export const RegimentEditor = { open: editRegiment };

@@ -1,267 +1,39 @@
-import { interpolateString, select, sum } from "d3";
-import { lazy } from "@/lazy-loaders";
-import { capitalize, ensureEl, rn, sanitizeId, si, wiki } from "../utils";
+import { openSurface } from "@/ui/app-shell/registry";
+import { notifyWorldChanged } from "@/ui/world-state";
+import { ensureEl, sanitizeId } from "../utils";
 
-let isInitialized = false;
-
+/**
+ * open — the preserved trigger seam for the Military Overview surface.
+ *
+ * The signature is unchanged from the legacy version so the callers (the menu's
+ * `overviewMilitary()` in editors.js, the tools button, and the Shift+M hotkey)
+ * keep calling `MilitaryOverview.open()` untouched. The body keeps the legacy
+ * open side-effects — no-op during customization, close other legacy dialogs,
+ * and force the states/borders/military layers on so the region and army
+ * elements exist for the row-hover highlights — then dispatches into the App
+ * shell, which mounts the React <MilitaryOverview> surface. All world reads and
+ * the war-alert mutation live inside the surface, behind the World-State
+ * accessor; the legacy `refresh` entry point is gone — editors signal
+ * `notifyWorldChanged()` instead and the surface re-reads.
+ */
 function open(): void {
   if (customization) return;
-  closeDialogs("#militaryOverview, .stable");
+  closeDialogs(".stable");
   if (!layerIsOn("toggleStates")) toggleStates();
   if (!layerIsOn("toggleBorders")) toggleBorders();
   if (!layerIsOn("toggleMilitary")) toggleMilitary();
-
-  const body = ensureEl("militaryBody");
-  refreshMilitaryOverview();
-  $("#militaryOverview").dialog();
-
-  if (!isInitialized) {
-    updateHeaders();
-
-    $("#militaryOverview").dialog({
-      title: "Military Overview",
-      resizable: false,
-      width: fitContent(),
-      position: { my: "right top", at: "right-10 top+10", of: "svg", collision: "fit" }
-    });
-
-    // add listeners
-    ensureEl("militaryOverviewRefresh").addEventListener("click", refreshMilitaryOverview);
-    ensureEl("militaryPercentage").addEventListener("click", togglePercentageMode);
-    ensureEl("militaryOptionsButton").addEventListener("click", militaryCustomize);
-    ensureEl("militaryRegimentsList").addEventListener("click", () => openRegimentsOverview(-1));
-    ensureEl("militaryOverviewRecalculate").addEventListener("click", militaryRecalculate);
-    ensureEl("militaryExport").addEventListener("click", downloadMilitaryData);
-    ensureEl("militaryWiki").addEventListener("click", () => wiki("Military-Forces"));
-
-    body.addEventListener("change", event => {
-      const el = event.target as HTMLInputElement;
-      const line = el.parentNode as HTMLElement;
-      const state = +line.dataset.id!;
-      changeAlert(state, line, +el.value);
-    });
-
-    body.addEventListener("click", event => {
-      const el = event.target as HTMLElement;
-      const line = el.parentNode as HTMLElement;
-      const state = +line.dataset.id!;
-      if (el.tagName === "SPAN") openRegimentsOverview(state);
-    });
-
-    isInitialized = true;
-  }
+  openSurface("military-overview", { anchor: "svg" });
 }
 
-async function openRegimentsOverview(state: number): Promise<void> {
-  const { RegimentsOverview } = await lazy.regimentsOverview();
-  RegimentsOverview.open(state);
-}
-
-// update military types in header and tooltips
-function updateHeaders(): void {
-  const header = ensureEl("militaryHeader");
-  const units = options.military.length;
-  header.style.gridTemplateColumns = `8em repeat(${units}, 5.2em) 4em 7em 5em 6em`;
-
-  header.querySelectorAll(".removable").forEach(el => {
-    el.remove();
-  });
-  const insert = (html: string) => ensureEl("militaryTotal").insertAdjacentHTML("beforebegin", html);
-  for (const u of options.military) {
-    const label = capitalize(u.name.replace(/_/g, " "));
-    insert(
-      `<div data-tip="State ${
-        u.name
-      } units number. Click to sort" class="sortable removable" data-sortby="${u.name.toLowerCase()}">${label}&nbsp;</div>`
-    );
-  }
-  header.querySelectorAll<HTMLElement>(".removable").forEach(el => {
-    el.addEventListener("click", () => sortLines(el));
-  });
-}
-
-// add line for each state
-function refreshMilitaryOverview(): void {
-  const body = ensureEl("militaryBody");
-  body.innerHTML = "";
-  let lines = "";
-  const states = pack.states.filter(s => s.i && !s.removed);
-
-  for (const s of states) {
-    const population = rn((s.rural! + s.urban! * urbanization) * populationRate);
-    const getForces = (u: MilitaryUnit) => (s.military || []).reduce((acc, r) => acc + (r.u[u.name] || 0), 0);
-    const total = options.military.reduce((acc, u) => acc + getForces(u) * u.crew, 0);
-    const rate = (total / population) * 100;
-
-    const sortData = options.military.map(u => `data-${u.name.toLowerCase()}="${getForces(u)}"`).join(" ");
-    const lineData = options.military
-      .map(u => `<div data-type="${u.name}" data-tip="State ${u.name} units number">${getForces(u)}</div>`)
-      .join(" ");
-
-    lines += /* html */ `<div
-        class="states"
-        data-id=${s.i}
-        data-state="${s.name}"
-        ${sortData}
-        data-total="${total}"
-        data-population="${population}"
-        data-rate="${rate}"
-        data-alert="${s.alert}"
-      >
-        <fill-box data-tip="${s.fullName}" fill="${s.color}" disabled></fill-box>
-        <input data-tip="${s.fullName}" style="width:6em" value="${s.name}" readonly />
-        ${lineData}
-        <div data-type="total" data-tip="Total state military personnel (considering crew)" style="font-weight: bold">${si(
-          total
-        )}</div>
-        <div data-type="population" data-tip="State population">${si(population)}</div>
-        <div data-type="rate" data-tip="Military personnel rate (% of state population). Depends on war alert">${rn(
-          rate,
-          2
-        )}%</div>
-        <input
-          data-tip="War Alert. Editable modifier to military forces number, depends of political situation"
-          style="width:4.1em"
-          type="number"
-          min="0"
-          step=".01"
-          value="${rn(s.alert ?? 0, 2)}"
-        />
-        <span data-tip="Show regiments list" class="icon-list-bullet pointer"></span>
-      </div>`;
-  }
-  body.insertAdjacentHTML("beforeend", lines);
-  updateFooter();
-
-  // add listeners
-  body.querySelectorAll<HTMLElement>("div.states").forEach(el => {
-    el.addEventListener("mouseenter", event => stateHighlightOn(event));
-  });
-  body.querySelectorAll<HTMLElement>("div.states").forEach(el => {
-    el.addEventListener("mouseleave", event => stateHighlightOff(event));
-  });
-
-  if (body.dataset.type === "percentage") {
-    body.dataset.type = "absolute";
-    togglePercentageMode();
-  }
-  applySorting(ensureEl("militaryHeader"));
-}
-
-function changeAlert(state: number, line: HTMLElement, alert: number): void {
-  const s = pack.states[state];
-  const prevAlert = s.alert ?? 1;
-  const dif = prevAlert ? alert / prevAlert : 0; // modifier
-  s.alert = alert;
-  line.dataset.alert = String(alert);
-
-  (s.military || []).forEach(r => {
-    Object.keys(r.u).forEach(u => {
-      r.u[u] = rn(r.u[u] * dif);
-    });
-    r.a = sum(Object.values(r.u)); // change total
-    select<SVGGElement, unknown>(`#armies > g > g#regiment${s.i}-${r.i} > text`).text(Military.getTotal(r)); // change icon text
-  });
-
-  const getForces = (u: MilitaryUnit) => (s.military || []).reduce((acc, r) => acc + (r.u[u.name] || 0), 0);
-  options.military.forEach(u => {
-    const forces = getForces(u);
-    line.dataset[u.name] = String(forces);
-    line.querySelector(`div[data-type='${u.name}']`)!.innerHTML = String(forces);
-  });
-
-  const population = rn((s.rural! + s.urban! * urbanization) * populationRate);
-  const total = options.military.reduce((acc, u) => acc + getForces(u) * u.crew, 0);
-  line.dataset.total = String(total);
-  const rate = (total / population) * 100;
-  line.dataset.rate = String(rate);
-  line.querySelector("div[data-type='total']")!.innerHTML = si(total);
-  line.querySelector("div[data-type='rate']")!.innerHTML = `${rn(rate, 2)}%`;
-
-  updateFooter();
-}
-
-function updateFooter(): void {
-  const body = ensureEl("militaryBody");
-  const lines = Array.from(body.querySelectorAll<HTMLElement>(":scope > div"));
-  const statesNumber = pack.states.filter(s => s.i && !s.removed).length;
-  ensureEl("militaryFooterStates").innerHTML = String(statesNumber);
-  const total = sum(lines.map(el => +el.dataset.total!));
-  ensureEl("militaryFooterForcesTotal").innerHTML = si(total);
-  ensureEl("militaryFooterForces").innerHTML = si(total / statesNumber);
-  ensureEl("militaryFooterRate").innerHTML = `${rn(sum(lines.map(el => +el.dataset.rate!)) / statesNumber, 2)}%`;
-  ensureEl("militaryFooterAlert").innerHTML = String(rn(sum(lines.map(el => +el.dataset.alert!)) / statesNumber, 2));
-}
-
-function stateHighlightOn(event: Event): void {
-  const target = event.target as HTMLElement;
-  const state = +target.dataset.id!;
-  if (customization || !state) return;
-  select<SVGGElement, unknown>(`#armies > g > g#army${state}`).transition().duration(2000).style("fill", "#ff0000");
-
-  if (!layerIsOn("toggleStates")) return;
-  const d = select<SVGGElement, unknown>("#regions").select(`#state${state}`).attr("d");
-
-  const path = select<SVGGElement, unknown>("#debug")
-    .append("path")
-    .attr("class", "highlight")
-    .attr("d", d)
-    .attr("fill", "none")
-    .attr("stroke", "red")
-    .attr("stroke-width", 1)
-    .attr("opacity", 1)
-    .attr("filter", "url(#blur1)");
-
-  const l = path.node()!.getTotalLength();
-  const dur = (l + 5000) / 2;
-  const i = interpolateString(`0,${l}`, `${l},${l}`);
-  path
-    .transition()
-    .duration(dur)
-    .attrTween("stroke-dasharray", () => t => i(t));
-}
-
-function stateHighlightOff(event: Event): void {
-  select<SVGGElement, unknown>("#debug")
-    .selectAll(".highlight")
-    .each(function () {
-      select(this).transition().duration(1000).attr("opacity", 0).remove();
-    });
-
-  const target = event.target as HTMLElement;
-  const state = +target.dataset.id!;
-  select<SVGGElement, unknown>(`#armies > g > g#army${state}`).transition().duration(1000).style("fill", null);
-}
-
-function togglePercentageMode(): void {
-  const body = ensureEl("militaryBody");
-  if (body.dataset.type === "absolute") {
-    body.dataset.type = "percentage";
-    const lines = body.querySelectorAll<HTMLElement>(":scope > div");
-    const array = Array.from(lines);
-    const cache: Record<string, number> = {};
-
-    const total = (type: string): number => {
-      if (cache[type]) return cache[type];
-      cache[type] = sum(array.map(el => +(el.dataset[type] || 0)));
-      return cache[type];
-    };
-
-    lines.forEach(el => {
-      el.querySelectorAll<HTMLElement>("div").forEach(div => {
-        const type = div.dataset.type!;
-        if (type === "rate") return;
-        const elTotal = total(type);
-        div.textContent = elTotal ? `${rn((+(el.dataset[type] || 0) / elTotal) * 100)}%` : "0%";
-      });
-    });
-  } else {
-    body.dataset.type = "absolute";
-    refreshMilitaryOverview();
-  }
-}
-
-function militaryCustomize(): void {
+/**
+ * openOptions — the legacy "Edit Military Units" dialog (`#militaryOptions`),
+ * unchanged apart from its exit: applying now regenerates forces through the
+ * domain core and signals `notifyWorldChanged()` so the React overview re-reads
+ * (instead of the deleted updateHeaders/refresh pair). This is a still-legacy
+ * sibling dialog, not part of the overview surface — it converts in Phase 4
+ * with the other mutating editors.
+ */
+function openOptions(): void {
   const types = ["melee", "ranged", "mounted", "machinery", "naval", "armored", "aviation", "magical"];
   const tableBody = ensureEl("militaryOptions").querySelector("tbody")!;
   removeUnitLines();
@@ -526,47 +298,10 @@ function militaryCustomize(): void {
     });
     localStorage.setItem("military", JSON.stringify(options.military));
     Military.generate();
-    updateHeaders();
-    refreshMilitaryOverview();
+    // The React overview (and any other open surface) re-reads on this signal —
+    // it replaces the legacy updateHeaders() + refreshMilitaryOverview() pair.
+    notifyWorldChanged();
   }
 }
 
-function militaryRecalculate(): void {
-  ensureEl("alertMessage").innerHTML =
-    "Are you sure you want to recalculate military forces for all states?<br>Regiments for all states will be regenerated";
-  $("#alert").dialog({
-    resizable: false,
-    title: "Recalculate military",
-    buttons: {
-      Recalculate: function () {
-        $(this).dialog("close");
-        Military.generate();
-        refreshMilitaryOverview();
-      },
-      Cancel: function () {
-        $(this).dialog("close");
-      }
-    }
-  });
-}
-
-function downloadMilitaryData(): void {
-  const body = ensureEl("militaryBody");
-  const units = options.military.map(u => u.name);
-  let data = `Id,State,${units.map(u => capitalize(u)).join(",")},Total,Population,Rate,War Alert\n`; // headers
-
-  body.querySelectorAll<HTMLElement>(":scope > div").forEach(el => {
-    data += `${el.dataset.id},`;
-    data += `${el.dataset.state},`;
-    data += `${units.map(u => el.dataset[u.toLowerCase()]).join(",")},`;
-    data += `${el.dataset.total},`;
-    data += `${el.dataset.population},`;
-    data += `${rn(Number(el.dataset.rate), 2)}%,`;
-    data += `${el.dataset.alert}\n`;
-  });
-
-  const name = `${getFileName("Military")}.csv`;
-  downloadFile(data, name);
-}
-
-export const MilitaryOverview = { open, refresh: refreshMilitaryOverview };
+export const MilitaryOverview = { open, openOptions };

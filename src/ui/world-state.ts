@@ -6,6 +6,7 @@ import type { Regiment } from "@/generators/military-generator";
 import type { River } from "@/generators/river-generator";
 import type { Route } from "@/generators/routes-generator";
 import type { State } from "@/generators/states-generator";
+import { rn } from "@/utils/numberUtils";
 
 /**
  * World-State accessor — the single typed wrapper over the `window.X` bridge that
@@ -444,6 +445,44 @@ export function addRegiment(stateId: number, cell: number): Regiment | undefined
   military.push(regiment);
   if (militaryModule) militaryModule.generateNote(regiment, state); // add legend
   return regiment;
+}
+
+/**
+ * A state's total population in people — the legacy military overview's
+ * formula: `(rural + urban * urbanization) * populationRate`, rounded. Returns
+ * 0 when the rate globals are absent (no world loaded).
+ */
+export function getStatePopulation(state: State): number {
+  if (typeof populationRate === "undefined" || populationRate === undefined) return 0;
+  if (typeof urbanization === "undefined" || urbanization === undefined) return 0;
+  return rn(((state.rural ?? 0) + (state.urban ?? 0) * urbanization) * populationRate);
+}
+
+/**
+ * Set a state's war alert, scaling every regiment's unit counts by the
+ * alert ratio and recomputing each regiment's total — the data mutation of the
+ * legacy military overview's editable War Alert column. A previous alert of 0
+ * zeroes all forces (legacy `dif = 0`); a missing previous alert counts as 1.
+ * Returns the affected regiments so the call site can redraw their map icons
+ * (a renderer side-effect) and signal `notifyWorldChanged`. Returns [] (no
+ * mutation) when the state does not resolve.
+ */
+export function setStateWarAlert(stateId: number, alert: number): Regiment[] {
+  const state = pack?.states?.[stateId];
+  if (!state) return [];
+
+  const previousAlert = state.alert ?? 1;
+  const ratio = previousAlert ? alert / previousAlert : 0;
+  state.alert = alert;
+
+  const regiments = state.military ?? [];
+  for (const regiment of regiments) {
+    for (const unitName of Object.keys(regiment.u)) {
+      regiment.u[unitName] = rn(regiment.u[unitName] * ratio);
+    }
+    regiment.a = Object.values(regiment.u).reduce((total, count) => total + count, 0);
+  }
+  return regiments;
 }
 
 /**

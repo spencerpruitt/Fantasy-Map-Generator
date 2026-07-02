@@ -278,7 +278,7 @@ groups.
   byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 7 — military-overview  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 6
 - User stories: 1, 3, 4
 
@@ -288,11 +288,11 @@ map (`#armies`, `#regions`, `#debug`); a row action opens regiments-overview (co
 Slice 6).
 
 **Acceptance criteria:**
-- [ ] `open()` seam preserved; table and percentage toggle reach parity.
-- [ ] Hover highlighting of state armies on the map (`#armies`/`#regions`/`#debug` d3
+- [x] `open()` seam preserved; table and percentage toggle reach parity.
+- [x] Hover highlighting of state armies on the map (`#armies`/`#regions`/`#debug` d3
   transitions) works, called as guarded side-effects with cleanup on unmount.
-- [ ] Opening regiments-overview from a row works against the Slice 6 React surface.
-- [ ] Legacy rendering + static markup deleted; tests per recipe; `.map` round-trip
+- [x] Opening regiments-overview from a row works against the Slice 6 React surface.
+- [x] Legacy rendering + static markup deleted; tests per recipe; `.map` round-trip
   byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 8 — heightmap-selection  [AFK]

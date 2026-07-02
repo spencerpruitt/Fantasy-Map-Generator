@@ -608,6 +608,94 @@ describe("world-state regiments-overview reads and mutations", () => {
   });
 });
 
+describe("world-state military-overview reads and mutations", () => {
+  interface StubRegiment {
+    i: number;
+    name: string;
+    a: number;
+    u: Record<string, number>;
+    n: number;
+  }
+  interface StubState {
+    i: number;
+    name: string;
+    rural?: number;
+    urban?: number;
+    alert?: number;
+    military?: StubRegiment[];
+  }
+
+  let redState: StubState;
+
+  beforeEach(() => {
+    redState = {
+      i: 1,
+      name: "Redland",
+      rural: 1000,
+      urban: 200,
+      alert: 1,
+      military: [
+        { i: 0, name: "1st Red", a: 100, u: { infantry: 80, archers: 20 }, n: 0 },
+        { i: 1, name: "2nd Red", a: 41, u: { infantry: 41 }, n: 0 }
+      ]
+    };
+    globalScope.pack = { states: [{ i: 0, name: "Neutrals" }, redState] };
+    globalScope.populationRate = 2;
+    globalScope.urbanization = 0.5;
+  });
+
+  afterEach(() => {
+    globalScope.populationRate = undefined;
+    globalScope.urbanization = undefined;
+  });
+
+  it("computes a state's population from rural + urbanized urban, rounded (legacy formula)", () => {
+    // (1000 + 200 * 0.5) * 2 = 2200
+    expect(worldState.getStatePopulation(redState as never)).toBe(2200);
+    // Missing counts read as 0.
+    expect(worldState.getStatePopulation({ i: 2, name: "Bare" } as never)).toBe(0);
+  });
+
+  it("returns 0 population when the rate globals are absent (no world loaded)", () => {
+    globalScope.populationRate = undefined;
+    expect(worldState.getStatePopulation(redState as never)).toBe(0);
+  });
+
+  it("setStateWarAlert scales every regiment's unit counts by the alert ratio and recomputes totals", () => {
+    const regiments = worldState.setStateWarAlert(1, 2);
+
+    expect(redState.alert).toBe(2);
+    expect(redState.military?.[0].u).toEqual({ infantry: 160, archers: 40 });
+    expect(redState.military?.[0].a).toBe(200);
+    expect(redState.military?.[1].u).toEqual({ infantry: 82 });
+    expect(redState.military?.[1].a).toBe(82);
+    // The affected regiments come back so the call site can redraw their icons.
+    expect(regiments).toBe(redState.military);
+  });
+
+  it("setStateWarAlert rounds scaled counts (legacy rn) and treats a missing previous alert as 1", () => {
+    redState.alert = undefined;
+    worldState.setStateWarAlert(1, 0.5);
+    expect(redState.military?.[0].u).toEqual({ infantry: 40, archers: 10 });
+    expect(redState.military?.[1].u).toEqual({ infantry: 21 }); // rn(20.5) rounds half up
+    expect(redState.military?.[1].a).toBe(21);
+  });
+
+  it("setStateWarAlert zeroes forces when the previous alert was 0 (legacy dif = 0)", () => {
+    redState.alert = 0;
+    worldState.setStateWarAlert(1, 3);
+    expect(redState.military?.[0].u).toEqual({ infantry: 0, archers: 0 });
+    expect(redState.military?.[0].a).toBe(0);
+  });
+
+  it("setStateWarAlert returns [] and mutates nothing for a missing state or absent world", () => {
+    expect(worldState.setStateWarAlert(99, 2)).toEqual([]);
+    globalScope.pack = undefined;
+    expect(worldState.setStateWarAlert(1, 2)).toEqual([]);
+    expect(redState.military?.[0].u).toEqual({ infantry: 80, archers: 20 });
+  });
+});
+
 describe("world-state reactivity (subscribe/version)", () => {
   it("bumps the world version on notifyWorldChanged", () => {
     const before = worldState.getWorldVersion();
