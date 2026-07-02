@@ -4,7 +4,10 @@
 > **Program context:** realizes step 2 ("Foundation spike") and seeds steps 3–5 of
 > [`replatform-program.md`](./replatform-program.md).
 > **Prerequisite:** ADR-0003 (React + build tooling choices) — see Implementation Decisions § Phase 0.
-> **Status:** Backlog. Fully specified through **Phase 1**; Phases 2–5 are a sequenced reattack
+> **Reactivity:** [ADR-0004](../../adr/adr-0004-world-state-reactivity.md) (Accepted).
+> **Status:** **Done** — Phases 0–2 (Slices 1–8) implemented, reviewed, and merged: React in the build,
+> four economy surfaces (compare-prices, market-overview, market-deals, trade-details) on React with
+> reactivity behind the accessor and the frozen conversion recipe. Phases 3–7 are a sequenced reattack
 > roadmap, each surface/phase becoming its own PRD when scheduled.
 
 ## Problem Statement
@@ -342,7 +345,7 @@ tracer, plus general app health.
   other menus are unaffected; a save/reload round-trips a real `.map`.
 
 ### Slice 7 — Reactivity model behind the World-State accessor  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 6
 - User stories: 8
 
@@ -352,13 +355,18 @@ accessor. Prove it by converting **market-overview** (a small read-only surface 
 state) end to end and retiring its legacy rendering.
 
 **Acceptance criteria:**
-- [ ] The accessor exposes a subscribe/read interface; `<ComparePrices>` and `<MarketOverview>`
-  update when underlying world data changes, verified headlessly.
-- [ ] market-overview reaches parity and its legacy rendering is deleted.
-- [ ] The `<Panel>` and accessor interfaces are unchanged by this slice (or the change is recorded).
+- [x] The accessor exposes a subscribe/read interface (`subscribeWorld`/`getWorldVersion`/
+  `notifyWorldChanged` + `useWorldVersion`, [ADR-0004](../../adr/adr-0004-world-state-reactivity.md));
+  `<ComparePrices>` and `<MarketOverview>` update when underlying world data changes, verified
+  headlessly.
+- [x] market-overview reaches parity (rename, coat-of-arms, sortable table, CSV, deals seam) and its
+  legacy rendering is deleted.
+- [x] The `<Panel>` interface is unchanged; the accessor's additive subscribe/version interface is
+  recorded in ADR-0004. (Broader signalling scope: legacy economy mutation sites were retrofitted to
+  signal, per the aligned decision.)
 
 ### Slice 8 — Freeze the "convert a surface" recipe  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 7
 - User stories: 6, 12
 
@@ -368,10 +376,13 @@ recipe into this PRD / a short doc: mount via shell, read via accessor, frame vi
 legacy in-slice, tests to write. This recipe is what later waves follow.
 
 **Acceptance criteria:**
-- [ ] Both surfaces reach parity and their legacy rendering is deleted.
-- [ ] A written recipe exists that a fresh agent can follow to convert an arbitrary surface.
-- [ ] Decisions on the `<Panel>` primitive (keep hand-rolled vs adopt a library) and the styling
-  system are recorded (or explicitly deferred with a trigger condition).
+- [x] Both surfaces reach parity and their legacy rendering is deleted. Shared primitives
+  (`SortHeader`, `csvField`) were extracted and the app-shell registry unified into
+  `registerSurface`/`getSurfaceComponent` behind a compile-checked `SurfaceId` union.
+- [x] A written recipe exists that a fresh agent can follow to convert an arbitrary surface:
+  [`docs/architecture/surface-conversion-recipe.md`](../../architecture/surface-conversion-recipe.md).
+- [x] The `<Panel>` (keep hand-rolled until a surface needs resize/snapping) and styling (reuse global
+  CSS until a scoped system is needed) decisions are recorded with trigger conditions in the recipe.
 
 ## Migration Waves — full front-end gameplan
 
