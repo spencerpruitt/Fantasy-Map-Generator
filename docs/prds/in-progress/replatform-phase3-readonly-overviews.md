@@ -296,7 +296,7 @@ Slice 6).
   byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 8 — heightmap-selection  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 7
 - User stories: 1, 3, 4
 
@@ -305,10 +305,10 @@ Slice 6).
 Cancel / Select / New Map buttons.
 
 **Acceptance criteria:**
-- [ ] `open()` seam preserved; the heightmap flow still opens it.
-- [ ] Canvas thumbnail grid renders all templates; options and Cancel/Select/New Map buttons
+- [x] `open()` seam preserved; the heightmap flow still opens it.
+- [x] Canvas thumbnail grid renders all templates; options and Cancel/Select/New Map buttons
   reach parity (Select/New Map invoke the existing flow callbacks unchanged).
-- [ ] Legacy rendering + static markup deleted; tests per recipe; `.map` round-trip
+- [x] Legacy rendering + static markup deleted; tests per recipe; `.map` round-trip
   byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 9 — elevation-profile  [AFK]

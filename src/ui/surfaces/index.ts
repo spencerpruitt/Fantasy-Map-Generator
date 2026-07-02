@@ -1,5 +1,6 @@
 import { registerSurface, type SurfaceComponent } from "../app-shell/registry";
 import { ComparePrices } from "./ComparePrices";
+import { HeightmapSelection } from "./HeightmapSelection";
 import { MarkersOverview } from "./MarkersOverview";
 import { MarketDeals } from "./MarketDeals";
 import { MarketOverview } from "./MarketOverview";
@@ -30,3 +31,4 @@ registerSurface("rivers-overview", RiversOverview as SurfaceComponent);
 registerSurface("markers-overview", MarkersOverview as SurfaceComponent);
 registerSurface("regiments-overview", RegimentsOverview as unknown as SurfaceComponent);
 registerSurface("military-overview", MilitaryOverview as SurfaceComponent);
+registerSurface("heightmap-selection", HeightmapSelection as SurfaceComponent);

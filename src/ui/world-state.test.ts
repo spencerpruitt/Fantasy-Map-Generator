@@ -56,6 +56,8 @@ afterEach(() => {
   globalScope.Goods = undefined;
   globalScope.Markets = undefined;
   globalScope.States = undefined;
+  globalScope.seed = undefined;
+  globalScope.grid = undefined;
   // Renaming tests mutate the shared harbor stub; reset it between tests.
   harbor.name = undefined;
 });
@@ -693,6 +695,25 @@ describe("world-state military-overview reads and mutations", () => {
     globalScope.pack = undefined;
     expect(worldState.setStateWarAlert(1, 2)).toEqual([]);
     expect(redState.military?.[0].u).toEqual({ infantry: 80, archers: 20 });
+  });
+});
+
+describe("world-state heightmap-selection reads", () => {
+  it("returns the current generation seed, or an empty string when none is set", () => {
+    globalScope.seed = "135111970";
+    expect(worldState.getWorldSeed()).toBe("135111970");
+
+    globalScope.seed = undefined;
+    expect(worldState.getWorldSeed()).toBe("");
+  });
+
+  it("returns the grid graph, or undefined when no world is loaded", () => {
+    const gridStub = { seed: "135111970", cellsX: 10, cellsY: 10, cells: {} };
+    globalScope.grid = gridStub;
+    expect(worldState.getGridGraph()).toBe(gridStub);
+
+    globalScope.grid = undefined;
+    expect(worldState.getGridGraph()).toBeUndefined();
   });
 });
 

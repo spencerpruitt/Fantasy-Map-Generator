@@ -6,6 +6,7 @@ import type { Regiment } from "@/generators/military-generator";
 import type { River } from "@/generators/river-generator";
 import type { Route } from "@/generators/routes-generator";
 import type { State } from "@/generators/states-generator";
+import type { GridGraph } from "@/types/GridGraph";
 import { rn } from "@/utils/numberUtils";
 
 /**
@@ -483,6 +484,23 @@ export function setStateWarAlert(stateId: number, alert: number): Regiment[] {
     regiment.a = Object.values(regiment.u).reduce((total, count) => total + count, 0);
   }
   return regiments;
+}
+
+/**
+ * The current generation seed (`window.seed`), or "" when no world is loaded.
+ * The heightmap-selection surface derives its preview grid from this.
+ */
+export function getWorldSeed(): string {
+  return typeof seed === "undefined" || seed === undefined ? "" : seed;
+}
+
+/**
+ * The raw grid-level graph (`window.grid`), or undefined when no world is
+ * loaded. The heightmap-selection surface clones this as the base geometry its
+ * template previews render on (it never mutates the live grid).
+ */
+export function getGridGraph(): GridGraph | undefined {
+  return typeof grid === "undefined" ? undefined : grid;
 }
 
 /**
