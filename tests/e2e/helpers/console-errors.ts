@@ -22,7 +22,11 @@ export function collectConsoleErrors(page: Page): {critical: () => string[]} {
         !e.includes("fonts.googleapis.com") &&
         !e.includes("google-analytics") &&
         !e.includes("googletagmanager") &&
-        !e.includes("Failed to load resource")
+        !e.includes("Failed to load resource") &&
+        // names-generator logs this as a handled fallback (it then picks a
+        // random name); it fires nondeterministically during lazy name
+        // materialization and is not a defect signal.
+        !e.includes("Name is too short! Random name will be selected")
     );
 
   return {critical};
