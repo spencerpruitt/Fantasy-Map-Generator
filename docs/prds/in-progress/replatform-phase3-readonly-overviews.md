@@ -351,7 +351,7 @@ stylesheet. Follows the Slice 9 d3 pattern.
   byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 11 — production-chains  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 10
 - User stories: 1, 2, 3, 4, 6
 
@@ -361,10 +361,10 @@ hover interactions. Follows the d3 pattern; the animation timers live inside the
 and are torn down in the effect cleanup.
 
 **Acceptance criteria:**
-- [ ] `ProductionChains.open()` seam preserved; callers unchanged.
-- [ ] d3 graph layout, animated flow dots, zoom/pan, and hover interactions reach parity;
+- [x] `ProductionChains.open()` seam preserved; callers unchanged.
+- [x] d3 graph layout, animated flow dots, zoom/pan, and hover interactions reach parity;
   animation timers stop on unmount (no leaks over open/close cycles).
-- [ ] Legacy rendering + static markup deleted (the static class body reduced to the seam);
+- [x] Legacy rendering + static markup deleted (the static class body reduced to the seam);
   tests per recipe; `.map` round-trip byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 12 — charts-overview  [AFK]
