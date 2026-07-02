@@ -409,8 +409,9 @@ once at the end of the feature). The user exercises each converted surface again
   Cancel/Select/New Map behave as before.
 - [ ] **elevation-profile:** open from a route and from a river; chart renders with biome/burg
   bands; curve selector changes the line; CSV/SVG/PNG exports download.
-- [ ] **hierarchy-tree:** open from states, cultures, and religions editors; tree renders; zoom/
-  drag work; hovering/leaving nodes updates the calling editor.
+- [ ] **hierarchy-tree:** open from the cultures and religions editors (its only two callers —
+  the states editor has none); tree renders; zoom/drag work; hovering/leaving nodes updates the
+  calling editor.
 - [ ] **production-chains:** open; graph renders with animated flow dots; zoom/pan and hover
   work; closing and reopening doesn't degrade (no timer leaks).
 - [ ] **charts-overview:** open; switch dimensions, metrics, and aggregations; charts update

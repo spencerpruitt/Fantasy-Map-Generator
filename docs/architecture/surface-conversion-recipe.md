@@ -100,3 +100,40 @@ localized findings with a regression test before Review.
   chrome moves to React. Until then, inline `style` for one-off layout and global classes for the rest.
 
 [kt]: ../../KEYTERMS.md
+
+## Patterns settled by Phase 3 (read-only overviews)
+
+Twelve more conversions (see `docs/prds/*/replatform-phase3-readonly-overviews.md`) settled these
+recurring shapes — reuse them instead of re-deriving:
+
+- **Legacy `public/modules/ui/*.js` overviews** get a thin typed seam in `src/controllers/` plus a
+  one-line `window.<globalName>` shim registered in `src/controllers/index.ts` (the eager boot
+  entry), so bare-global callers in tools.js/hotkeys.js keep working. The legacy JS file, its
+  script tag, and its static markup die in the same slice.
+- **d3-in-React (charts/trees/graphs):** React owns the `<Panel>`, all controls as JSX state, and
+  the `<svg ref>` element; data prep is a `useMemo` over accessor getters with `useWorldVersion()`
+  in the deps (that is the whole reactivity story); d3 owns everything inside the svg in ONE
+  `useEffect` keyed on [model + control state]. Cleanup contract: `.interrupt()` transitions, stop
+  animation timers, detach zoom/drag behaviors (`svg.on(".zoom", null)`), empty the svg
+  (`selectAll("*").remove()` drops listeners), reset host side channels (`tip("")`). Zoom
+  transforms survive re-renders via the svg's `__zoom`. Worked examples: `ElevationProfile`,
+  `HierarchyTree`, `ProductionChains`, `ChartsOverview`.
+- **Shared primitives:** `useSortState` (`src/ui/SortHeader.tsx`) for column sorting;
+  `useBulkSelection`/`BulkControls`/`lockableBulkActions` (`src/ui/bulk-selection.tsx`) for
+  in-surface bulk modes (replacing legacy `window.bulkBars` per surface); `RowIcon`
+  (`src/ui/RowIcon.tsx`); `showTip` (`src/ui/host.ts`) for guarded host tips.
+- **Module-level persistence** stands in for legacy static-DOM state that survived dialog close
+  (selected curve, chart form, marker add-type, thumbnail caches). Persist at module scope,
+  expose a `reset...()` hook for test isolation, and reset on `mapId` change where legacy did.
+- **Legacy ids as seams:** when still-legacy code (tools.js, general.js hover-highlight) reaches
+  into a converted surface by element id, keep that id on the React-rendered element and make the
+  legacy read null-safe (`document.getElementById(...)?...` / `findEl(...)?.`) — never a bare
+  implicit global, which throws when the element is gone.
+- **Lifecycle sweeps:** any path that discards the world must close React surfaces —
+  `.map` load (`src/io/load.ts`) and map regeneration (`public/main.js`) both call
+  `closeAllSurfaces()` through the lazy app-shell bridge. A new world-discarding path must do the
+  same.
+- **Parity e2e waits:** load fixtures with the `map:generated`-event wait (see
+  `tests/e2e/regiments-overview-parity.spec.ts`), never `waitForTimeout` sleeps — the naive
+  `mapId` poll races the initial random generation, whose `closeAllSurfaces()` closes a
+  just-opened panel. Poll (`expect.poll`) for animated/async state.
