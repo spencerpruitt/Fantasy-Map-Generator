@@ -226,7 +226,7 @@ the way MarketDeals did.
 - [x] Tests per recipe; `.map` round-trip byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 4 — rivers-overview  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 3
 - User stories: 1, 3, 4, 5, 7
 
@@ -236,11 +236,11 @@ type, basin via basin lookup), bulk actions — reusing the seam + bulkBars-repl
 Slice 3 established.
 
 **Acceptance criteria:**
-- [ ] Thin TS controller seam; `overviewRivers()` callers unchanged.
-- [ ] Multi-field search (including basin lookup) and bulk row-actions reach parity, signalling
+- [x] Thin TS controller seam; `overviewRivers()` callers unchanged.
+- [x] Multi-field search (including basin lookup) and bulk row-actions reach parity, signalling
   via `notifyWorldChanged()`.
-- [ ] `public/modules/ui/rivers-overview.js` and its static markup are deleted in this slice.
-- [ ] Tests per recipe; `.map` round-trip byte-identical; `tsc`/`biome`/vitest/playwright green.
+- [x] `public/modules/ui/rivers-overview.js` and its static markup are deleted in this slice.
+- [x] Tests per recipe; `.map` round-trip byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 5 — markers-overview  [AFK]
 - Status: todo

@@ -737,13 +737,14 @@ function toggleAddRiver() {
   const pressed = ensureEl("addRiver").classList.contains("pressed");
   if (pressed) {
     unpressClickToAddButton();
-    ensureEl("addNewRiver").classList.remove("pressed");
+    // the mirror button lives in the React Rivers Overview panel, so it only exists while the panel is open
+    findEl("addNewRiver")?.classList.remove("pressed");
     return;
   }
 
   addFeature.querySelectorAll("button.pressed").forEach(b => b.classList.remove("pressed"));
   addRiver.classList.add("pressed");
-  ensureEl("addNewRiver").classList.add("pressed");
+  findEl("addNewRiver")?.classList.add("pressed");
   closeDialogs(".stable");
   viewbox.style("cursor", "crosshair").on("click", addRiverOnClick);
   tip("Click on map to place new river or extend an existing one. Hold Shift to place multiple rivers", true, "warn");
@@ -891,8 +892,9 @@ function addRiverOnClick() {
   if (d3.event.shiftKey === false) {
     Lakes.cleanupLakeData();
     unpressClickToAddButton();
-    ensureEl("addNewRiver").classList.remove("pressed");
-    if (addNewRiver.offsetParent) riversOverviewRefresh.click();
+    // both buttons live in the React Rivers Overview panel, so they only exist while the panel is open
+    findEl("addNewRiver")?.classList.remove("pressed");
+    findEl("riversOverviewRefresh")?.click();
   }
 }
 

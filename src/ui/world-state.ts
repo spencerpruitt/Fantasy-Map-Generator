@@ -1,6 +1,7 @@
 import type { Burg } from "@/generators/burgs-generator";
 import type { Good } from "@/generators/goods-generator";
 import type { Deal, Market } from "@/generators/markets-generator";
+import type { River } from "@/generators/river-generator";
 import type { Route } from "@/generators/routes-generator";
 import type { State } from "@/generators/states-generator";
 
@@ -258,6 +259,44 @@ export function removeRoute(route: Route): void {
 export function rebuildRouteLinks(): void {
   if (typeof Routes === "undefined" || !Routes || !pack) return;
   pack.cells.routes = Routes.buildLinks(pack.routes);
+}
+
+/** The full rivers list (`pack.rivers`), or an empty list if no world is loaded. */
+export function getRivers(): River[] {
+  return pack?.rivers ?? [];
+}
+
+/**
+ * The rivers indexed by id — the lookup the Rivers Overview resolves each
+ * river's basin (main stem) name through. Built per call; a surface reads it
+ * once per render inside its view memo (legacy parity: the overview precomputed
+ * this map instead of running a find() per row).
+ */
+export function getRiversById(): Map<number, River> {
+  return new Map(getRivers().map(river => [river.i, river]));
+}
+
+/**
+ * Remove a river AND all its tributaries through the domain core
+ * (`Rivers.remove`), which drops them from `pack.rivers`, restores their cells'
+ * flux, and removes their SVG paths. A no-op for an id already removed (e.g. as
+ * another removal's tributary), so bulk deletion over an arbitrary selection is
+ * safe. The mutating call site signals `notifyWorldChanged`.
+ */
+export function removeRiver(riverId: number): void {
+  if (typeof Rivers !== "undefined" && Rivers) Rivers.remove(riverId);
+}
+
+/**
+ * Remove every river at once — the legacy remove-all fast path: empty
+ * `pack.rivers` and zero the per-cell river index instead of cascading river by
+ * river. Clearing the rendered river paths is the caller's renderer
+ * side-effect, and the call site signals `notifyWorldChanged`.
+ */
+export function removeAllRivers(): void {
+  if (!pack) return;
+  pack.rivers = [];
+  pack.cells.r = new Uint16Array(pack.cells.i.length);
 }
 
 /**

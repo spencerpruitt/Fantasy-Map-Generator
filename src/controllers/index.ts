@@ -9,3 +9,6 @@ import { lazy } from "@/lazy-loaders";
 window.overviewRoutes = () => {
   lazy.routesOverview().then(module => module.open());
 };
+window.overviewRivers = () => {
+  lazy.riversOverview().then(module => module.open());
+};

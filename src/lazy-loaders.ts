@@ -26,6 +26,7 @@ export const lazy = {
   regimentEditor: () => import("@/controllers/regiment-editor"),
   regimentsOverview: () => import("@/controllers/regiments-overview"),
   religionsEditor: () => import("@/controllers/religions-editor"),
+  riversOverview: () => import("@/controllers/rivers-overview"),
   routesOverview: () => import("@/controllers/routes-overview"),
   save: () => import("@/io/save"),
   statesEditor: () => import("@/controllers/states-editor"),

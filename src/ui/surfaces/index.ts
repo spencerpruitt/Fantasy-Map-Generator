@@ -4,6 +4,7 @@ import { MarketDeals } from "./MarketDeals";
 import { MarketOverview } from "./MarketOverview";
 import { Minimap } from "./Minimap";
 import { ProductionOverview } from "./ProductionOverview";
+import { RiversOverview } from "./RiversOverview";
 import { RoutesOverview } from "./RoutesOverview";
 import { TradeDetails } from "./TradeDetails";
 
@@ -22,3 +23,4 @@ registerSurface("trade-details", TradeDetails as unknown as SurfaceComponent);
 registerSurface("production-overview", ProductionOverview as unknown as SurfaceComponent);
 registerSurface("minimap", Minimap as SurfaceComponent);
 registerSurface("routes-overview", RoutesOverview as SurfaceComponent);
+registerSurface("rivers-overview", RiversOverview as SurfaceComponent);

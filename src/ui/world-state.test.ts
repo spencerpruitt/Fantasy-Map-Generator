@@ -309,6 +309,90 @@ describe("world-state routes-overview reads", () => {
   });
 });
 
+describe("world-state rivers-overview reads and mutations", () => {
+  // Minimal river stubs: a main stem (its own basin), its tributary, and an
+  // independent stem — enough to pin basin lookup and cascade removal.
+  interface StubRiver {
+    i: number;
+    name: string;
+    type: string;
+    discharge: number;
+    length: number;
+    width: number;
+    parent: number;
+    basin: number;
+  }
+
+  let mainStem: StubRiver;
+  let tributary: StubRiver;
+  let lone: StubRiver;
+
+  beforeEach(() => {
+    mainStem = { i: 1, name: "Ohio", type: "River", discharge: 500, length: 100, width: 2, parent: 1, basin: 1 };
+    tributary = { i: 2, name: "Wolf Creek", type: "Creek", discharge: 20, length: 40, width: 0.5, parent: 1, basin: 1 };
+    lone = { i: 3, name: "Silver Fork", type: "Fork", discharge: 60, length: 60, width: 1.25, parent: 3, basin: 3 };
+    const packStub = globalScope.pack as { rivers?: unknown; cells?: unknown };
+    packStub.rivers = [mainStem, tributary, lone];
+    packStub.cells = { i: [0, 1, 2, 3], r: new Uint16Array([0, 1, 2, 0]) };
+  });
+
+  afterEach(() => {
+    globalScope.Rivers = undefined;
+  });
+
+  it("reads the rivers list, or an empty list when no world is loaded", () => {
+    expect(worldState.getRivers()).toEqual([mainStem, tributary, lone]);
+    globalScope.pack = undefined;
+    expect(worldState.getRivers()).toEqual([]);
+  });
+
+  it("indexes the rivers by id for basin (main stem) lookup", () => {
+    const riversById = worldState.getRiversById();
+    expect(riversById.get(tributary.basin)?.name).toBe("Ohio");
+    expect(riversById.get(lone.basin)?.name).toBe("Silver Fork");
+    globalScope.pack = undefined;
+    expect(worldState.getRiversById().size).toBe(0);
+  });
+
+  it("removes a river through the domain core (Rivers.remove) without broadcasting", () => {
+    const removed: number[] = [];
+    globalScope.Rivers = { remove: (id: number) => removed.push(id) };
+    let notified = 0;
+    const unsubscribe = worldState.subscribeWorld(() => {
+      notified += 1;
+    });
+
+    worldState.removeRiver(2);
+    expect(removed).toEqual([2]);
+    expect(notified).toBe(0);
+    unsubscribe();
+
+    // Guarded: absent Rivers module is a no-op, not a throw.
+    globalScope.Rivers = undefined;
+    expect(() => worldState.removeRiver(2)).not.toThrow();
+  });
+
+  it("removes all rivers at once, zeroing the per-cell river index", () => {
+    let notified = 0;
+    const unsubscribe = worldState.subscribeWorld(() => {
+      notified += 1;
+    });
+
+    worldState.removeAllRivers();
+
+    const packStub = globalScope.pack as { rivers: unknown[]; cells: { i: number[]; r: Uint16Array } };
+    expect(packStub.rivers).toEqual([]);
+    expect(packStub.cells.r).toEqual(new Uint16Array(4));
+    // The call site signals; the accessor itself must not.
+    expect(notified).toBe(0);
+    unsubscribe();
+
+    // Guarded: absent world is a no-op, not a throw.
+    globalScope.pack = undefined;
+    expect(() => worldState.removeAllRivers()).not.toThrow();
+  });
+});
+
 describe("world-state reactivity (subscribe/version)", () => {
   it("bumps the world version on notifyWorldChanged", () => {
     const before = worldState.getWorldVersion();

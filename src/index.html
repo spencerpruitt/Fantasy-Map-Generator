@@ -5395,62 +5395,6 @@
           </table>
         </form>
       </div>
-      <div id="riversOverview" class="dialog stable" style="display: none">
-        <div id="riversHeader" class="header" style="grid-template-columns: 9em 4em 7em 5em 5em 9em">
-          <div data-tip="Click to sort by river name" class="sortable alphabetically" data-sortby="name">
-            River&nbsp;
-          </div>
-          <div data-tip="Click to sort by river type name" class="sortable alphabetically" data-sortby="type">
-            Type&nbsp;
-          </div>
-          <div
-            data-tip="Click to sort by discharge (flux in m3/s)"
-            class="sortable icon-sort-number-down"
-            data-sortby="discharge"
-          >
-            Discharge&nbsp;
-          </div>
-          <div data-tip="Click to sort by river length" class="sortable" data-sortby="length">Length&nbsp;</div>
-          <div data-tip="Click to sort by river mouth width" class="sortable" data-sortby="width">Width&nbsp;</div>
-          <div data-tip="Click to sort by river basin" class="sortable alphabetically" data-sortby="basin">
-            Basin&nbsp;
-          </div>
-        </div>
-        <div id="riversBody" class="table"></div>
-        <div id="riversFooter" class="totalLine">
-          <div data-tip="Rivers number" style="margin-left: 4px">
-            Rivers:&nbsp;<span id="riversFooterNumber">0</span>
-          </div>
-          <div data-tip="Average discharge" style="margin-left: 12px">
-            Average discharge:&nbsp;<span id="riversFooterDischarge">0</span>
-          </div>
-          <div data-tip="Average length" style="margin-left: 12px">
-            Length:&nbsp;<span id="riversFooterLength">0</span>
-          </div>
-          <div data-tip="Average mouth width" style="margin-left: 12px">
-            Width:&nbsp;<span id="riversFooterWidth">0</span>
-          </div>
-        </div>
-        <div id="riversBottom">
-          <button id="riversOverviewRefresh" data-tip="Refresh the Editor" class="icon-cw"></button>
-          <button
-            id="addNewRiver"
-            data-tip="Automatically add river starting from clicked cell. Hold Shift to add multiple"
-            class="icon-plus"
-          ></button>
-          <button id="riverCreateNew" data-tip="Create a new river selecting river cells" class="icon-map-pin"></button>
-          <button id="riversBasinHighlight" data-tip="Toggle basin highlight mode" class="icon-sitemap"></button>
-          <button
-            id="riversExport"
-            data-tip="Save rivers-related data as a text file (.csv)"
-            class="icon-download"
-          ></button>
-          <button id="riversRemoveAll" data-tip="Remove all rivers" class="icon-trash"></button>
-          <label for="riversSearch" data-tip="Filter by name, type or basin" style="margin-left: 0.2em"
-            >Search: <input id="riversSearch" type="search"
-          /></label>
-        </div>
-      </div>
       <div id="militaryOverview" class="dialog stable" style="display: none">
         <div id="militaryHeader" class="header">
           <div data-tip="State name. Click to sort" class="sortable alphabetically" data-sortby="state">
@@ -8848,7 +8792,6 @@
     <script defer src="modules/ui/diplomacy-editor.js?v=1.120.5"></script>
     <script defer src="modules/ui/zones-editor.js?v=1.120.5"></script>
     <script defer src="modules/ui/burgs-overview.js?v=1.125.0"></script>
-    <script defer src="modules/ui/rivers-overview.js?v=1.120.5"></script>
     <script defer src="modules/ui/markers-overview.js?v=1.125.0"></script>
     <script defer src="modules/ui/emblems-editor.js?v=1.122.11"></script>
     <script defer src="modules/ui/markers-editor.js?v=1.122.11"></script>

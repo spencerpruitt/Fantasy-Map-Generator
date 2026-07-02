@@ -280,6 +280,11 @@ declare global {
   var editRoute: (id: string) => void;
   var createRoute: (defaultGroup?: string) => void;
   var overviewRoutes: () => void;
+  var toggleRivers: (event?: MouseEvent) => void;
+  var editRiver: (id: string) => void;
+  var createRiver: () => void;
+  var toggleAddRiver: () => void;
+  var overviewRivers: () => void;
   var fog: (id: string, path: string) => void;
   var unfog: (id?: string) => void;
   var overviewBurgs: (options: { stateId: number }) => void;
