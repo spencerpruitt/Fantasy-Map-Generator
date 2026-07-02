@@ -68,15 +68,18 @@ test.describe("Minimap parity (React surface)", () => {
     expect(legacyAfterOpen.styles).toBe(false);
     expect(legacyAfterOpen.hook).toBe("function");
 
-    // Zooming the main map drives the hook: the viewport rect shrinks.
+    // Zooming the main map drives the hook: the viewport rect shrinks. Poll rather
+    // than sleep — under full-suite load the zoom handler can land late.
     await page.evaluate(() => (window as any).zoomTo(graphWidth / 2, graphHeight / 2, 4, 0));
-    await page.waitForTimeout(300);
-    const zoomedRect = await viewport.evaluate(rect => ({
-      width: Number(rect.getAttribute("width")),
-      height: Number(rect.getAttribute("height"))
-    }));
-    expect(zoomedRect.width).toBeLessThan(initialRect.width);
-    expect(zoomedRect.height).toBeLessThan(initialRect.height);
+    await expect
+      .poll(async () => {
+        const rect = await viewport.evaluate(el => ({
+          width: Number(el.getAttribute("width")),
+          height: Number(el.getAttribute("height"))
+        }));
+        return rect.width < initialRect.width && rect.height < initialRect.height;
+      })
+      .toBe(true);
 
     // Clicking the minimap pans the main view to the clicked point (scale kept).
     // viewX/viewY/scale are top-level `let` bindings in main.js (not window
@@ -87,10 +90,16 @@ test.describe("Minimap parity (React surface)", () => {
     if (surfaceBox) {
       await page.mouse.click(surfaceBox.x + surfaceBox.width * 0.25, surfaceBox.y + surfaceBox.height * 0.25);
     }
-    await page.waitForTimeout(700);
-    const viewAfter = await page.evaluate(() => ({x: viewX, y: viewY, scale}));
-    expect(viewAfter.scale).toBeCloseTo(4, 1);
-    expect(viewAfter.x !== viewBefore.x || viewAfter.y !== viewBefore.y).toBe(true);
+    // The pan is a 450ms zoomTo animation and d3's zoom interpolator may dip the
+    // scale mid-flight; poll until the view has moved AND the scale has settled
+    // back, instead of sleeping a fixed interval.
+    await expect
+      .poll(async () => {
+        const view = await page.evaluate(() => ({x: viewX, y: viewY, scale}));
+        const moved = view.x !== viewBefore.x || view.y !== viewBefore.y;
+        return moved && Math.abs(view.scale - 4) < 0.05;
+      })
+      .toBe(true);
 
     // Closing the panel releases the hook (main.js guards for its absence).
     await dialog.getByRole("button", {name: "Close"}).click();
