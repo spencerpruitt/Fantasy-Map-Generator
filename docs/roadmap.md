@@ -46,7 +46,7 @@ second world graph. Both branch from `master` after Wave 0 merges (or from
 | Item | Suggested branch | PRD | Type | Blocked by | Status |
 |---|---|---|---|---|---|
 | **AR-3 — economy orchestrator** | `feat/economy-orchestrator` | `prds/backlog/ar-3-economy-orchestrator.md` (**stub — flesh out + slice first**) | AFK | Wave 1 (AR-6 helpful, not strict) | ⬜ stub |
-| **Re-platform foundation spike** (React + build, Compare Prices surface end-to-end, `.map` intact) | `feat/replatform-foundation` | `prds/in-progress/replatform-foundation.md` (Phase 0–1 specified; **ADR-0003** accepted) | HITL (visual) | Wave 1 (AR-1 serialization boundary) | 🚧 in progress |
+| **Re-platform foundation spike** (React + build, 4 economy surfaces end-to-end, reactivity + recipe, `.map` intact) | `feat/replatform-foundation`, `feat/replatform-recipe-hardening` | `prds/finished/replatform-foundation.md` (Phases 0–2 / Slices 1–8; **ADR-0003**, **ADR-0004** accepted) | HITL (visual) | Wave 1 (AR-1 serialization boundary) | ✅ done |
 
 **Notes:** AR-3 still needs a quick grill (window.X exposure for legacy callers; a
 behavior-preservation/characterization test) before it's implementation-ready. The foundation

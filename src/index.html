@@ -5156,84 +5156,8 @@
           <button id="marketsRegenerateProduction" data-tip="Regenerate production and trade deals" class="icon-retweet"></button>
         </div>
       </div>
-      <div id="marketOverview" class="dialog stable" style="display: none">
-        <div id="marketOverviewNameLine" style="display: flex; align-items: center; margin-bottom: 0.4em">
-          <div class="label">Name:</div>
-          <input
-            id="marketOverviewName"
-            data-tip="Type to rename the market. Clear the field to reset to the default name"
-            autocorrect="off"
-            spellcheck="false"
-            style="width: 11em; margin-left: 0.3em;"
-          />
-          <span
-            id="marketOverviewNameReset"
-            data-tip="Reset to the default name (center burg name)"
-            class="icon-ccw pointer"
-            style="margin-left: 0.3em"
-          ></span>
-        </div>
-        <div id="marketOverviewHeader" class="header" style="grid-template-columns: 2.5em 9em 5.5em 3.2em;">
-          <div></div>
-          <div data-tip="Click to sort by good" class="sortable alphabetically" data-sortby="good" style="margin-left:0">Good&nbsp;</div>
-          <div data-tip="Click to sort by stock" class="sortable icon-sort-number-down" data-sortby="stock">Stock&nbsp;</div>
-          <div data-tip="Click to sort by price" class="sortable" data-sortby="price">Price&nbsp;</div>
-        </div>
-        <div id="marketOverviewGoodsBody" class="table" style="max-height:40em"></div>
-        <div id="marketOverviewSummary" class="totalLine"></div>
-        <div id="marketOverviewInfo" style="margin-bottom: 0.3em"></div>
-        <div id="marketOverviewBottom">
-          <button id="marketOverviewRefresh" data-tip="Refresh the Overview screen" class="icon-cw"></button>
-          <button id="marketOverviewOpenDeals" data-tip="View market deals" class="icon-list-bullet"></button>
-          <button id="marketOverviewExport" data-tip="Save market deals data as a text file (.csv)" class="icon-download"></button>
-        </div>
-      </div>
-      <div id="marketDeals" class="dialog stable" style="display: none">
-        <div>
-          <div id="marketDealsHeader" class="header" style="grid-template-columns: 2em 6.8em 4em 10em 4em 4em;">
-            <div></div>
-            <div data-tip="Click to sort by good" class="sortable alphabetically" data-sortby="good" style="margin-left:0">Good&nbsp;</div>
-            <div data-tip="Click to sort by deal type" class="sortable alphabetically" data-sortby="direction">Type&nbsp;</div>
-            <div data-tip="Click to sort by counterparty" class="sortable alphabetically" data-sortby="counterparty">Counterparty&nbsp;</div>
-            <div data-tip="Click to sort by units" class="sortable" data-sortby="units">Units&nbsp;</div>
-            <div data-tip="Click to sort by income" class="sortable" data-sortby="income">Income&nbsp;</div>
-          </div>
-          <div id="marketDealsBody" class="table" style="max-height:30em"></div>
-
-          <div id="marketDealsFooter" class="totalLine">
-            <div style="margin-left: 5px" data-tip="Deals count">Deals: <span id="marketDealsFooterDeals">0</span></div>
-            <div style="margin-left: 12px" data-tip="Net flow for this market">Net Flow: <span id="marketDealsFooterNet">🟡 0</span></div>
-          </div>
-
-          <div id="marketDealsBottom">
-            <button id="marketDealsRefresh" data-tip="Refresh the Deals screen" class="icon-cw"></button>
-            <button id="marketDealsExport" data-tip="Save market deals data as a text file (.csv)" class="icon-download"></button>
-            <select id="marketDealsFilter" data-tip="Filter deals by scope" style="margin-left: 8px">
-              <option value="all">All</option>
-              <option value="local">Local</option>
-              <option value="global">Global</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <div id="tradeDetails" class="dialog stable" style="display: none">
-        <div>
-          <div id="tradeDetailsSummary" class="totalLine"></div>
-          <div id="tradeDetailsHeader" class="header" style="grid-template-columns: 2.5em 10em 5em 5.5em 3.6em;">
-            <div></div>
-            <div data-tip="Click to sort by good" class="sortable alphabetically" data-sortby="good" style="margin-left:0">Good&nbsp;</div>
-            <div data-tip="Click to sort by units" class="sortable icon-sort-number-down" data-sortby="units">Units&nbsp;</div>
-            <div data-tip="Click to sort by unit price" class="sortable" data-sortby="price">Price&nbsp;</div>
-            <div data-tip="Click to sort by value" class="sortable" data-sortby="value">Value&nbsp;</div>
-          </div>
-          <div id="tradeDetailsBody" class="table" style="max-height:30em"></div>
-          <div id="tradeDetailsFooter" class="totalLine">
-            <div style="margin-left: 5px">Distance: <span id="tradeDetailsFooterDistance">0</span></div>
-            <div style="margin-left: 12px" data-tip="Total traded units">Units: <span id="tradeDetailsFooterUnits">0</span></div>
-            <div style="margin-left: 12px" data-tip="Total deal value">Value: <span id="tradeDetailsFooterValue">0</span></div>
-          </div>
-        </div>
-      </div>
+      <!-- #marketOverview, #marketDeals, and #tradeDetails were retired in the React re-platform
+           (Slices 7-8); they are now the <MarketOverview>, <MarketDeals>, and <TradeDetails> surfaces. -->
       <div id="unitsEditor" class="dialog stable" style="display: none">
         <div id="unitsBody" style="margin-left: 1.1em">
           <div class="unitsHeader" style="margin-top: 0.4em">
