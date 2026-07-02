@@ -368,7 +368,7 @@ and are torn down in the effect cleanup.
   tests per recipe; `.map` round-trip byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 12 — charts-overview  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 11
 - User stories: 1, 2, 3, 4, 6
 
@@ -377,10 +377,10 @@ surface), opened via `open()`. d3 stacked-bar charts with dimension/metric selec
 aggregations. Last surface; pure application of the established d3 pattern.
 
 **Acceptance criteria:**
-- [ ] `open()` seam preserved; callers unchanged.
-- [ ] Dimension and metric selectors re-render the chart; every aggregation mode matches legacy
+- [x] `open()` seam preserved; callers unchanged.
+- [x] Dimension and metric selectors re-render the chart; every aggregation mode matches legacy
   output; stacked bars reach visual/behavioral parity.
-- [ ] Legacy rendering + static markup deleted; tests per recipe; `.map` round-trip
+- [x] Legacy rendering + static markup deleted; tests per recipe; `.map` round-trip
   byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 13 — HITL verification: all 12 surfaces  [HITL]

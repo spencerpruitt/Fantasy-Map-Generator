@@ -860,3 +860,119 @@ describe("world-state reactivity (subscribe/version)", () => {
     expect(calls).toBe(1);
   });
 });
+
+describe("world-state charts-overview reads", () => {
+  beforeEach(() => {
+    const burgs: unknown[] = [0];
+    burgs[1] = { i: 1, name: "Burgton", population: 5, product: 12, production: [] };
+    globalScope.pack = {
+      cells: {
+        i: [0, 1, 2],
+        h: [50, 30, 10],
+        t: [1, 0, -1],
+        r: [0, 5, 0],
+        g: [0, 1, 2],
+        pop: [10, 20, 0],
+        area: [100, 120, 90],
+        biome: [1, 2, 0],
+        culture: [1, 2, 0],
+        religion: [1, 1, 0],
+        state: [1, 2, 0],
+        province: [1, 0, 0],
+        market: [1, 1, 0],
+        burg: [0, 1, 0]
+      },
+      burgs,
+      states: [
+        { i: 0, name: "Neutrals" },
+        { i: 1, name: "Aland", color: "#a00" }
+      ],
+      cultures: [{ name: "Wildlands" }, { name: "Alpha", color: "#111" }],
+      religions: [{ name: "No religion" }, { name: "Faith", color: "#222" }],
+      provinces: [0, { name: "Coastal", color: "#333" }]
+    };
+    globalScope.grid = { cells: { temp: [5, 10, 15], prec: [50, 60, 70] } };
+    globalScope.biomesData = { i: [0, 1, 2], name: ["Marine", "Forest", "Desert"], color: ["#00f", "#0f0", "#ff0"] };
+    globalScope.populationRate = 10;
+    globalScope.urbanization = 2;
+    globalScope.mapId = 42;
+    globalScope.Goods = { getBiomesProduction: () => ({ 1: [{ goodId: 7, production: 0.5 }] }) };
+    globalScope.Production = {
+      getCellProduction: (cellId: number) => (cellId === 1 ? { 7: 4 } : {}),
+      getBurgProduction: () => ({ 7: 3, 9: 1 })
+    };
+  });
+
+  afterEach(() => {
+    globalScope.pack = undefined;
+    globalScope.grid = undefined;
+    globalScope.biomesData = undefined;
+    globalScope.populationRate = undefined;
+    globalScope.urbanization = undefined;
+    globalScope.mapId = undefined;
+    globalScope.Goods = undefined;
+    globalScope.Production = undefined;
+  });
+
+  it("reads the chart cell arrays by reference", () => {
+    const cells = worldState.getChartCells();
+    expect(cells).toBeDefined();
+    expect(cells!.i).toEqual([0, 1, 2]);
+    expect(cells!.state[1]).toBe(2);
+    // Reference, not a copy — a large world must not be duplicated per chart.
+    expect(cells!.h).toBe((globalScope.pack as { cells: { h: number[] } }).cells.h);
+  });
+
+  it("returns undefined chart cells when no world is loaded", () => {
+    globalScope.pack = undefined;
+    expect(worldState.getChartCells()).toBeUndefined();
+  });
+
+  it("reads the grid climate arrays, undefined without a grid", () => {
+    expect(worldState.getGridClimate()).toEqual({ temp: [5, 10, 15], prec: [50, 60, 70] });
+    globalScope.grid = undefined;
+    expect(worldState.getGridClimate()).toBeUndefined();
+  });
+
+  it("reads the biome catalog, empty without biomesData", () => {
+    expect(worldState.getBiomesMeta().name).toEqual(["Marine", "Forest", "Desert"]);
+    globalScope.biomesData = undefined;
+    expect(worldState.getBiomesMeta()).toEqual({ i: [], name: [], color: [] });
+  });
+
+  it("reads the raw named collections including the id-0 placeholder", () => {
+    expect(worldState.getNamedEntities("states")[0]).toEqual({ i: 0, name: "Neutrals" });
+    expect(worldState.getNamedEntities("cultures")[1]).toEqual({ name: "Alpha", color: "#111" });
+    expect(worldState.getNamedEntities("provinces")[0]).toBe(0);
+    globalScope.pack = undefined;
+    expect(worldState.getNamedEntities("religions")).toEqual([]);
+  });
+
+  it("reads the population scales, zeros when absent", () => {
+    expect(worldState.getPopulationScales()).toEqual({ populationRate: 10, urbanization: 2 });
+    globalScope.populationRate = undefined;
+    globalScope.urbanization = undefined;
+    expect(worldState.getPopulationScales()).toEqual({ populationRate: 0, urbanization: 0 });
+  });
+
+  it("reads the map id, undefined when absent", () => {
+    expect(worldState.getMapId()).toBe(42);
+    globalScope.mapId = undefined;
+    expect(worldState.getMapId()).toBeUndefined();
+  });
+
+  it("reads the per-biome production table, {} without the Goods module", () => {
+    expect(worldState.getBiomesProduction()).toEqual({ 1: [{ goodId: 7, production: 0.5 }] });
+    globalScope.Goods = undefined;
+    expect(worldState.getBiomesProduction()).toEqual({});
+  });
+
+  it("merges a cell's rural and its burg's urban production by good id", () => {
+    // Cell 1 carries burg 1: rural {7: 4} + urban {7: 3, 9: 1}.
+    expect(worldState.getCellGoodsProduction(1, {})).toEqual({ 7: 7, 9: 1 });
+    // Cell 0 has no burg: rural only.
+    expect(worldState.getCellGoodsProduction(0, {})).toEqual({});
+    globalScope.Production = undefined;
+    expect(worldState.getCellGoodsProduction(1, {})).toEqual({});
+  });
+});

@@ -584,6 +584,120 @@ export function getProfileCellRecord(cellId: number): ProfileCellRecord | undefi
 }
 
 /**
+ * The per-cell arrays the Data Charts aggregations read. References to the live
+ * typed arrays (never copies — a large world stays memory-bounded), or undefined
+ * when no world is loaded.
+ */
+export interface ChartCells {
+  i: number[];
+  h: ArrayLike<number>;
+  t: ArrayLike<number>;
+  r: ArrayLike<number>;
+  g: number[];
+  pop: ArrayLike<number>;
+  area: ArrayLike<number>;
+  biome: ArrayLike<number>;
+  culture: ArrayLike<number>;
+  religion: ArrayLike<number>;
+  state: ArrayLike<number>;
+  province: ArrayLike<number>;
+  market: ArrayLike<number>;
+  burg: ArrayLike<number>;
+}
+
+/** The chart-relevant `pack.cells` arrays, or undefined when no world is loaded. */
+export function getChartCells(): ChartCells | undefined {
+  const cells = pack?.cells;
+  if (!cells) return undefined;
+  return {
+    i: cells.i,
+    h: cells.h,
+    t: cells.t,
+    r: cells.r,
+    g: cells.g,
+    pop: cells.pop,
+    area: cells.area,
+    biome: cells.biome,
+    culture: cells.culture,
+    religion: cells.religion,
+    state: cells.state,
+    province: cells.province,
+    market: cells.market,
+    burg: cells.burg
+  };
+}
+
+/**
+ * The grid-level climate arrays (`grid.cells.temp` / `grid.cells.prec`, indexed
+ * through `pack.cells.g`), or undefined when no world is loaded.
+ */
+export function getGridClimate(): { temp: ArrayLike<number>; prec: ArrayLike<number> } | undefined {
+  const gridCells = typeof grid === "undefined" ? undefined : grid?.cells;
+  if (!gridCells?.temp || !gridCells?.prec) return undefined;
+  return { temp: gridCells.temp, prec: gridCells.prec };
+}
+
+/**
+ * The biome catalog (`biomesData` ids, names, colors), or empty arrays when no
+ * world is loaded — the guarded shape the biome chart dimension reads.
+ */
+export function getBiomesMeta(): { i: number[]; name: string[]; color: string[] } {
+  if (typeof biomesData === "undefined" || !biomesData) return { i: [], name: [], color: [] };
+  return { i: biomesData.i, name: biomesData.name, color: biomesData.color };
+}
+
+/** The named/colored collections the chart dimensions bucket cells into. */
+export type ChartCollectionKey = "states" | "cultures" | "religions" | "provinces";
+
+/**
+ * A raw named collection (`pack.states` / `cultures` / `religions` / `provinces`)
+ * indexed by entity id — INCLUDING the id-0 neutral/placeholder entry, which the
+ * charts resolve to "no" (unlike `getStates`, which filters for real states).
+ * Empty when no world is loaded.
+ */
+export function getNamedEntities(kind: ChartCollectionKey): { name?: string; color?: string }[] {
+  return (pack?.[kind] as { name?: string; color?: string }[] | undefined) ?? [];
+}
+
+/** The population display rates, or zeros when no world is loaded. */
+export function getPopulationScales(): { populationRate: number; urbanization: number } {
+  const rate = typeof populationRate === "undefined" || populationRate === undefined ? 0 : populationRate;
+  const urban = typeof urbanization === "undefined" || urbanization === undefined ? 0 : urbanization;
+  return { populationRate: rate, urbanization: urban };
+}
+
+/** The current map id (`window.mapId`), or undefined when no world is loaded. */
+export function getMapId(): number | undefined {
+  return typeof mapId === "undefined" ? undefined : mapId;
+}
+
+/** Per-biome rural production records (`Goods.getBiomesProduction`), keyed by biome id. */
+export type BiomeGoodsProduction = Record<number, { goodId: number; production: number }[]>;
+
+/** The per-biome production table (`Goods.getBiomesProduction`), or {} when no world is loaded. */
+export function getBiomesProduction(): BiomeGoodsProduction {
+  if (typeof Goods === "undefined" || !Goods) return {};
+  return Goods.getBiomesProduction();
+}
+
+/**
+ * Everything a cell produces, by good id: the cell's rural production
+ * (`Production.getCellProduction`) plus, when a burg sits on the cell, its urban
+ * production (`Production.getBurgProduction`) — the legacy charts-overview
+ * merge. {} when no world is loaded.
+ */
+export function getCellGoodsProduction(cellId: number, biomeProduction: BiomeGoodsProduction): Record<number, number> {
+  if (typeof Production === "undefined" || !Production || !pack) return {};
+  const produced = Production.getCellProduction(cellId, biomeProduction);
+  const burgId = pack.cells.burg[cellId];
+  if (burgId) {
+    const urban = Production.getBurgProduction(pack.burgs[burgId]);
+    for (const [goodId, units] of Object.entries(urban)) produced[+goodId] = (produced[+goodId] || 0) + units;
+  }
+  return produced;
+}
+
+/**
  * Rename a market (or reset to the default when the name is blank). This is the
  * one mutation the accessor exposes so far — it lives here, with the reads, so
  * surfaces never touch `market.name` directly.

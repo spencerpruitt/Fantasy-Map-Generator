@@ -1,4 +1,5 @@
 import { registerSurface, type SurfaceComponent } from "../app-shell/registry";
+import { ChartsOverview } from "./ChartsOverview";
 import { ComparePrices } from "./ComparePrices";
 import { ElevationProfile } from "./ElevationProfile";
 import { HeightmapSelection } from "./HeightmapSelection";
@@ -38,3 +39,4 @@ registerSurface("heightmap-selection", HeightmapSelection as SurfaceComponent);
 registerSurface("elevation-profile", ElevationProfile as unknown as SurfaceComponent);
 registerSurface("hierarchy-tree", HierarchyTree as unknown as SurfaceComponent);
 registerSurface("production-chains", ProductionChains as SurfaceComponent);
+registerSurface("charts-overview", ChartsOverview as SurfaceComponent);

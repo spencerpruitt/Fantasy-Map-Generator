@@ -36,7 +36,8 @@ export type SurfaceId =
   | "heightmap-selection"
   | "elevation-profile"
   | "hierarchy-tree"
-  | "production-chains";
+  | "production-chains"
+  | "charts-overview";
 
 /** Props handed to a surface when it is opened. Shape is surface-specific. */
 export type SurfaceProps = Record<string, unknown>;
