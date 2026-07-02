@@ -185,6 +185,130 @@ describe("world-state production-overview reads", () => {
   });
 });
 
+describe("world-state routes-overview reads", () => {
+  interface StubRoute {
+    i: number;
+    group: string;
+    feature: number;
+    points: number[][];
+    name?: string;
+    length?: number;
+    lock?: boolean;
+  }
+
+  let road: StubRoute;
+  let trail: StubRoute;
+
+  beforeEach(() => {
+    road = {
+      i: 1,
+      group: "roads",
+      feature: 1,
+      points: [
+        [0, 0, 1],
+        [10, 0, 2]
+      ],
+      name: "North Road",
+      length: 100
+    };
+    trail = {
+      i: 2,
+      group: "trails",
+      feature: 1,
+      points: [
+        [0, 5, 3],
+        [8, 5, 4]
+      ],
+      lock: true
+    };
+    (globalScope.pack as { routes?: unknown; cells?: unknown }).routes = [road, trail];
+  });
+
+  afterEach(() => {
+    globalScope.Routes = undefined;
+  });
+
+  it("reads the routes list, or an empty list when no world is loaded", () => {
+    expect(worldState.getRoutes()).toEqual([road, trail]);
+    globalScope.pack = undefined;
+    expect(worldState.getRoutes()).toEqual([]);
+  });
+
+  it("returns an existing route name without regenerating it", () => {
+    globalScope.Routes = { generateName: () => "Generated Way" };
+    expect(worldState.getRouteName(road as never)).toBe("North Road");
+    expect(road.name).toBe("North Road");
+  });
+
+  it("generates and persists a missing route name (legacy parity)", () => {
+    globalScope.Routes = { generateName: () => "Goat Trail" };
+    expect(worldState.getRouteName(trail as never)).toBe("Goat Trail");
+    // Persisted onto the route so the generated name is stable and saved.
+    expect(trail.name).toBe("Goat Trail");
+  });
+
+  it("returns an empty name when the route has none and Routes is absent", () => {
+    expect(worldState.getRouteName(trail as never)).toBe("");
+    expect(trail.name).toBeUndefined();
+  });
+
+  it("returns an existing route length without remeasuring it", () => {
+    globalScope.Routes = { getLength: () => 999 };
+    expect(worldState.getRouteLength(road as never)).toBe(100);
+  });
+
+  it("measures and persists a missing route length (legacy parity)", () => {
+    globalScope.Routes = { getLength: (id: number) => (id === 2 ? 42 : 0) };
+    expect(worldState.getRouteLength(trail as never)).toBe(42);
+    expect(trail.length).toBe(42);
+  });
+
+  it("returns zero length when Routes is absent or measuring throws", () => {
+    expect(worldState.getRouteLength(trail as never)).toBe(0);
+    // getLength reads the route's SVG path; when it is missing the getter must
+    // not throw during render.
+    globalScope.Routes = {
+      getLength: () => {
+        throw new Error("no path");
+      }
+    };
+    expect(worldState.getRouteLength(trail as never)).toBe(0);
+  });
+
+  it("locks and unlocks a route without broadcasting (call site signals)", () => {
+    let notified = 0;
+    const unsubscribe = worldState.subscribeWorld(() => {
+      notified += 1;
+    });
+    worldState.setRouteLock(road as never, true);
+    expect(road.lock).toBe(true);
+    worldState.setRouteLock(road as never, false);
+    expect(road.lock).toBe(false);
+    expect(notified).toBe(0);
+    unsubscribe();
+  });
+
+  it("removes a route through the domain core (Routes.remove)", () => {
+    const removed: unknown[] = [];
+    globalScope.Routes = { remove: (route: unknown) => removed.push(route) };
+    worldState.removeRoute(road as never);
+    expect(removed).toEqual([road]);
+    // Guarded: absent Routes module is a no-op, not a throw.
+    globalScope.Routes = undefined;
+    expect(() => worldState.removeRoute(road as never)).not.toThrow();
+  });
+
+  it("rebuilds the cell-route links from the remaining routes", () => {
+    const links = { 1: { 2: 1 } };
+    globalScope.Routes = { buildLinks: (routes: unknown[]) => (routes.length === 2 ? links : {}) };
+    worldState.rebuildRouteLinks();
+    expect((globalScope.pack as { cells: { routes?: unknown } }).cells.routes).toBe(links);
+    // Guarded: absent Routes module or world is a no-op.
+    globalScope.Routes = undefined;
+    expect(() => worldState.rebuildRouteLinks()).not.toThrow();
+  });
+});
+
 describe("world-state reactivity (subscribe/version)", () => {
   it("bumps the world version on notifyWorldChanged", () => {
     const before = worldState.getWorldVersion();

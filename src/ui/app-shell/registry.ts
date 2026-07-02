@@ -27,7 +27,8 @@ export type SurfaceId =
   | "market-deals"
   | "trade-details"
   | "production-overview"
-  | "minimap";
+  | "minimap"
+  | "routes-overview";
 
 /** Props handed to a surface when it is opened. Shape is surface-specific. */
 export type SurfaceProps = Record<string, unknown>;

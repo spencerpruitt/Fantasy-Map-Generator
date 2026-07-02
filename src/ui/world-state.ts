@@ -1,6 +1,7 @@
 import type { Burg } from "@/generators/burgs-generator";
 import type { Good } from "@/generators/goods-generator";
 import type { Deal, Market } from "@/generators/markets-generator";
+import type { Route } from "@/generators/routes-generator";
 import type { State } from "@/generators/states-generator";
 
 /**
@@ -197,6 +198,66 @@ export function getCustomerBuyPrice(price: number): number {
 /** The price a customer receives selling to a market (`Markets.customerSellPrice`). */
 export function getCustomerSellPrice(price: number): number {
   return Markets ? Markets.customerSellPrice(price) : price;
+}
+
+/** The full routes list (`pack.routes`), or an empty list if no world is loaded. */
+export function getRoutes(): Route[] {
+  return pack?.routes ?? [];
+}
+
+/**
+ * A route's display name, generating and PERSISTING one on first read
+ * (`Routes.generateName`) — legacy parity: the overview and route editor both
+ * materialize missing names so they stay stable and are saved into the `.map`.
+ * Deliberately does not signal a world change (the legacy overview never redrew
+ * for this either). Returns "" when no name exists and the Routes module is
+ * absent (no world loaded).
+ */
+export function getRouteName(route: Route): string {
+  if (!route.name && typeof Routes !== "undefined" && Routes) route.name = Routes.generateName(route);
+  return route.name ?? "";
+}
+
+/**
+ * A route's length in map units, measuring and PERSISTING it on first read
+ * (`Routes.getLength`) — same legacy lazy-materialization as `getRouteName`.
+ * `Routes.getLength` reads the route's rendered SVG path, so this guards both an
+ * absent Routes module and a missing path (returning 0 instead of throwing
+ * during render).
+ */
+export function getRouteLength(route: Route): number {
+  if (!route.length && typeof Routes !== "undefined" && Routes) {
+    try {
+      route.length = Routes.getLength(route.i);
+    } catch {
+      return 0;
+    }
+  }
+  return route.length ?? 0;
+}
+
+/** Lock or unlock a route. The mutating call site signals `notifyWorldChanged`. */
+export function setRouteLock(route: Route, lock: boolean): void {
+  route.lock = lock;
+}
+
+/**
+ * Remove a route through the domain core (`Routes.remove`), which drops it from
+ * `pack.routes`, unlinks its cell connections, and removes its SVG path. The
+ * mutating call site signals `notifyWorldChanged`.
+ */
+export function removeRoute(route: Route): void {
+  if (typeof Routes !== "undefined" && Routes) Routes.remove(route);
+}
+
+/**
+ * Rebuild the cell-to-route link index from the remaining routes
+ * (`Routes.buildLinks`). The legacy remove-all flow did this once after a mass
+ * removal; the call site signals `notifyWorldChanged`.
+ */
+export function rebuildRouteLinks(): void {
+  if (typeof Routes === "undefined" || !Routes || !pack) return;
+  pack.cells.routes = Routes.buildLinks(pack.routes);
 }
 
 /**

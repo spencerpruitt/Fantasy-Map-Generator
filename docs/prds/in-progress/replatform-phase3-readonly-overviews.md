@@ -206,7 +206,7 @@ markup and styles dynamically.
 - [x] Tests per recipe; `.map` round-trip byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 3 — routes-overview  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 2
 - User stories: 1, 3, 4, 5, 7
 
@@ -217,13 +217,13 @@ seam in `src/controllers/` so callers keep a lazy `open()`, and replace `bulkBar
 the way MarketDeals did.
 
 **Acceptance criteria:**
-- [ ] A thin TS controller seam in `src/controllers/` preserves the trigger; `overviewRoutes()`
+- [x] A thin TS controller seam in `src/controllers/` preserves the trigger; `overviewRoutes()`
   callers still open the surface.
-- [ ] Search filter, lock-all/remove-all, and bulk-delete reach parity; bulk-delete uses the
+- [x] Search filter, lock-all/remove-all, and bulk-delete reach parity; bulk-delete uses the
   existing domain-core logic and signals via `notifyWorldChanged()` (no new mutation patterns).
-- [ ] The `window.bulkBars` integration for this surface is replaced per the MarketDeals pattern.
-- [ ] `public/modules/ui/routes-overview.js` and its static markup are deleted in this slice.
-- [ ] Tests per recipe; `.map` round-trip byte-identical; `tsc`/`biome`/vitest/playwright green.
+- [x] The `window.bulkBars` integration for this surface is replaced per the MarketDeals pattern.
+- [x] `public/modules/ui/routes-overview.js` and its static markup are deleted in this slice.
+- [x] Tests per recipe; `.map` round-trip byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 4 — rivers-overview  [AFK]
 - Status: todo

@@ -276,6 +276,10 @@ declare global {
 
   var highlightElement: (element: Element | null, duration?: number) => void;
   var applySortingByHeader: (headerId: string) => void;
+  var toggleRoutes: (event?: MouseEvent) => void;
+  var editRoute: (id: string) => void;
+  var createRoute: (defaultGroup?: string) => void;
+  var overviewRoutes: () => void;
   var fog: (id: string, path: string) => void;
   var unfog: (id?: string) => void;
   var overviewBurgs: (options: { stateId: number }) => void;

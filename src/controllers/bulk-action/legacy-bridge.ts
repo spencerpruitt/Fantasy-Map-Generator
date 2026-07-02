@@ -2,7 +2,6 @@ import { createBurgsAdapter } from "./adapters/burgs-adapter";
 import { createMarkersAdapter } from "./adapters/markers-adapter";
 import { createProvincesAdapter } from "./adapters/provinces-adapter";
 import { createRiversAdapter } from "./adapters/rivers-adapter";
-import { createRoutesAdapter } from "./adapters/routes-adapter";
 import { createZonesAdapter } from "./adapters/zones-adapter";
 import { BulkActionBar } from "./bulk-action-bar";
 import type { BulkEntityAdapter } from "./bulk-entity-adapter";
@@ -19,12 +18,13 @@ import type { BulkEntityAdapter } from "./bulk-entity-adapter";
 
 type AdapterFactory = (redraw: () => void) => BulkEntityAdapter;
 
+// The routes menu converted to React (its surface owns bulk mode natively);
+// its adapter is gone. Remaining entries die as their menus convert.
 const factories: Record<string, AdapterFactory> = {
   burgs: createBurgsAdapter,
   provinces: createProvincesAdapter,
   markers: createMarkersAdapter,
   rivers: createRiversAdapter,
-  routes: createRoutesAdapter,
   zones: createZonesAdapter
 };
 

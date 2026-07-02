@@ -175,6 +175,10 @@ export interface Route {
   cells?: number[];
   merged?: boolean;
   lock?: boolean;
+  // Display name and measured length are generated lazily by the UI (overview /
+  // editor) on first read and persisted into the .map from then on.
+  name?: string;
+  length?: number;
 }
 
 type RiverEdge = { riverId: number; fromIndex: number };
