@@ -2,6 +2,7 @@ import { registerSurface, type SurfaceComponent } from "../app-shell/registry";
 import { ComparePrices } from "./ComparePrices";
 import { ElevationProfile } from "./ElevationProfile";
 import { HeightmapSelection } from "./HeightmapSelection";
+import { HierarchyTree } from "./HierarchyTree";
 import { MarkersOverview } from "./MarkersOverview";
 import { MarketDeals } from "./MarketDeals";
 import { MarketOverview } from "./MarketOverview";
@@ -34,3 +35,4 @@ registerSurface("regiments-overview", RegimentsOverview as unknown as SurfaceCom
 registerSurface("military-overview", MilitaryOverview as SurfaceComponent);
 registerSurface("heightmap-selection", HeightmapSelection as SurfaceComponent);
 registerSurface("elevation-profile", ElevationProfile as unknown as SurfaceComponent);
+registerSurface("hierarchy-tree", HierarchyTree as unknown as SurfaceComponent);

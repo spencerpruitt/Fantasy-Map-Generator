@@ -76,6 +76,15 @@
       return this.getAttribute("size") || "1em";
     }
 
+    // React sets `size` as a PROPERTY (it exists on the instance), not an
+    // attribute — without this setter a React `size` prop throws on the
+    // getter-only property and crashes the rendering surface.
+    set size(newSize) {
+      this.setAttribute("size", newSize);
+      this.querySelector("svg")?.setAttribute("width", newSize);
+      this.querySelector("svg")?.setAttribute("height", newSize);
+    }
+
     get tip() {
       return this.dataset.tip || "Fill style. Click to change";
     }

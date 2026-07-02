@@ -332,7 +332,7 @@ controls.
   byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 10 — hierarchy-tree  [AFK]
-- Status: todo
+- Status: done
 - Blocked by: Slice 9
 - User stories: 1, 2, 3, 4, 6
 
@@ -342,12 +342,12 @@ and drag, node enter/leave callbacks back into the calling editor, and a dynamic
 stylesheet. Follows the Slice 9 d3 pattern.
 
 **Acceptance criteria:**
-- [ ] `open(props)` seam preserved; states/cultures/religions editor callers unchanged.
-- [ ] d3 stratify/tree renders in a ref'd SVG; zoom and drag reach parity; node enter/leave
+- [x] `open(props)` seam preserved; states/cultures/religions editor callers unchanged.
+- [x] d3 stratify/tree renders in a ref'd SVG; zoom and drag reach parity; node enter/leave
   callbacks fire into the calling editor as before.
-- [ ] The dynamic-stylesheet behavior is preserved (or replaced by equivalent scoped styles)
+- [x] The dynamic-stylesheet behavior is preserved (or replaced by equivalent scoped styles)
   with cleanup on unmount.
-- [ ] Legacy rendering + static markup deleted; tests per recipe; `.map` round-trip
+- [x] Legacy rendering + static markup deleted; tests per recipe; `.map` round-trip
   byte-identical; `tsc`/`biome`/vitest/playwright green.
 
 ### Slice 11 — production-chains  [AFK]

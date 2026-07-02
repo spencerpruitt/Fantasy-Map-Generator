@@ -34,7 +34,8 @@ export type SurfaceId =
   | "regiments-overview"
   | "military-overview"
   | "heightmap-selection"
-  | "elevation-profile";
+  | "elevation-profile"
+  | "hierarchy-tree";
 
 /** Props handed to a surface when it is opened. Shape is surface-specific. */
 export type SurfaceProps = Record<string, unknown>;

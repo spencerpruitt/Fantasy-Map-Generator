@@ -17,11 +17,12 @@ import {
 // Register the `fill-box` custom element (public/components/fill-box.js) as an
 // intrinsic JSX tag so the color swatch renders exactly as the legacy markup did.
 // `disabled` only switches off the pointer cursor (the element has no click
-// handler of its own); RegimentsOverview's read-only swatches set it.
+// handler of its own); RegimentsOverview's read-only swatches set it. `size`
+// sets the swatch's square edge length (HierarchyTree's origin selector uses it).
 declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
-      "fill-box": { fill?: string; disabled?: boolean };
+      "fill-box": { fill?: string; size?: string; disabled?: boolean };
     }
   }
 }
