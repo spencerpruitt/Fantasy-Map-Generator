@@ -380,7 +380,11 @@ export function RiversOverview({ anchor, onClose }: RiversOverviewProps) {
           onSort={handleSort}
         />
       </div>
-      <div className="table">
+      {/* Keeps the legacy element id so general.js's map-hover
+          highlightEditorLine still finds the open overview's rows (it probes
+          #riversOverview and matches div[data-id]) — same pattern as
+          MilitaryOverview; heals when general.js converts. */}
+      <div id="riversOverview" className="table">
         {sortedRows.map(row => (
           // biome-ignore lint/a11y/noStaticElementInteractions: hover-only map highlight (legacy row mouseenter/mouseleave); keyboard users reach the same river via the row's Locate button.
           <div

@@ -341,6 +341,19 @@ export function setMarkerLock(marker: Marker, lock: boolean): void {
 }
 
 /**
+ * Invert EVERY marker's lock, writing an explicit boolean on each one — a
+ * previously-locked marker keeps a `lock: false` KEY instead of losing the
+ * property. The legacy invert-all did exactly this (unlike the per-marker
+ * toggle, which deletes the key — that inconsistency is legacy parity), so the
+ * same user action serializes identical `.map` bytes. The mutating call site
+ * signals `notifyWorldChanged`.
+ */
+export function invertAllMarkerLocks(): void {
+  if (!pack?.markers) return;
+  pack.markers = pack.markers.map(marker => ({ ...marker, lock: !marker.lock }));
+}
+
+/**
  * A marker's note (name + legend text) from the global notes list, or
  * undefined when it has none (or no world is loaded). Notes are keyed by the
  * `marker{i}` element id.

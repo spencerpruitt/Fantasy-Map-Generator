@@ -73,19 +73,114 @@ test.describe("Rivers Overview parity (React surface)", () => {
     const cleared = await page.evaluate(() => document.getElementById("rivers")?.getAttribute("data-basin"));
     expect(cleared).toBe(null);
 
-    // No legacy rendering was created by opening.
+    // No legacy rendering was created by opening: the #riversOverview id is
+    // reused by the React table (for general.js's hover highlight, like
+    // MilitaryOverview), but the legacy dialog body does not exist.
     const legacyAfterOpen = await page.evaluate(() => ({
-      dialog: document.getElementById("riversOverview") !== null,
+      isReactTable: document.getElementById("riversOverview")?.classList.contains("table") ?? false,
       body: document.getElementById("riversBody") !== null
     }));
-    expect(legacyAfterOpen.dialog).toBe(false);
+    expect(legacyAfterOpen.isReactTable).toBe(true);
     expect(legacyAfterOpen.body).toBe(false);
 
-    // The panel closes cleanly.
+    // The panel closes cleanly, and the reused id unmounts with it.
     await dialog.getByRole("button", {name: "Close"}).click();
     await expect(dialog).not.toBeVisible();
+    const idGoneAfterClose = await page.evaluate(() => document.getElementById("riversOverview") === null);
+    expect(idGoneAfterClose).toBe(true);
 
     // No critical console/page errors during the whole flow.
+    expect(errors.critical()).toEqual([]);
+  });
+
+  test("map hover over a river never throws and highlights the open overview's row", async ({context, page}) => {
+    await context.clearCookies();
+
+    const errors = collectConsoleErrors(page);
+
+    await page.goto("/");
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+
+    await page.waitForSelector("#mapToLoad", {state: "attached"});
+
+    const fileInput = page.locator("#mapToLoad");
+    const mapFilePath = path.join(__dirname, "../fixtures/demo.map");
+    await fileInput.setInputFiles(mapFilePath);
+
+    await page.waitForFunction(() => (window as any).mapId !== undefined, {timeout: 120000});
+    await page.waitForTimeout(500);
+
+    // A synthetic mousemove over a river path's midpoint, bubbling to the
+    // viewbox exactly like a real hover (general.js's handler is debounced
+    // leading-edge with a 100ms cooldown, so callers poll until it runs).
+    const hoverRiver = () =>
+      page.evaluate(() => {
+        const riverPath = document.querySelector("#rivers > path") as SVGGeometryElement | null;
+        if (!riverPath) return null;
+        const midpoint = riverPath.getPointAtLength(riverPath.getTotalLength() / 2);
+        const ctm = riverPath.getScreenCTM();
+        if (!ctm) return null;
+        const clientX = ctm.a * midpoint.x + ctm.c * midpoint.y + ctm.e;
+        const clientY = ctm.b * midpoint.x + ctm.d * midpoint.y + ctm.f;
+        riverPath.dispatchEvent(new MouseEvent("mousemove", {bubbles: true, clientX, clientY}));
+        return +riverPath.id.slice(5);
+      });
+
+    // Panel CLOSED: hovering a river must set the map tooltip without throwing
+    // (the regression: general.js read the bare `riversOverview` global, which
+    // is a ReferenceError on every river mousemove once the static markup is gone).
+    await expect
+      .poll(
+        async () => {
+          await hoverRiver();
+          return page.evaluate(() => document.getElementById("tooltip")?.innerHTML ?? "");
+        },
+        {timeout: 15000}
+      )
+      .toContain("Click to edit");
+
+    // Panel OPEN: the same hover highlights the corresponding overview row
+    // (general.js probes #riversOverview and adds .hovered to the div[data-id]).
+    await page.evaluate(() => (window as any).overviewRivers());
+    const dialog = page.getByRole("dialog", {name: "Rivers Overview"});
+    await expect(dialog).toBeVisible();
+
+    const riverId = await hoverRiver();
+    expect(riverId).not.toBeNull();
+    const row = dialog.locator(`.table > .states[data-id="${riverId}"]`);
+    await expect(row).toBeAttached();
+    await expect
+      .poll(
+        async () => {
+          await hoverRiver();
+          return row.evaluate(el => el.classList.contains("hovered"));
+        },
+        {timeout: 15000}
+      )
+      .toBe(true);
+
+    // Panel CLOSED again (the guarded read must no-op once the id unmounts):
+    // clear the tooltip and prove the hover handler still completes cleanly.
+    await dialog.getByRole("button", {name: "Close"}).click();
+    await expect(dialog).not.toBeVisible();
+    await page.evaluate(() => {
+      const tooltip = document.getElementById("tooltip");
+      if (tooltip) tooltip.innerHTML = "";
+    });
+    await expect
+      .poll(
+        async () => {
+          await hoverRiver();
+          return page.evaluate(() => document.getElementById("tooltip")?.innerHTML ?? "");
+        },
+        {timeout: 15000}
+      )
+      .toContain("Click to edit");
+
+    // No critical console/page errors across every hover.
     expect(errors.critical()).toEqual([]);
   });
 });

@@ -2,6 +2,7 @@
 // Migrated TS modules import `lazy` directly; `window.lazy` exists only so the
 // legacy `public/modules/**/*.js` files can reach the same registry.
 export const lazy = {
+  appShell: () => import("@/ui/app-shell/registry"),
   battleScreen: () => import("@/controllers/battle-screen"),
   chartsOverview: () => import("@/controllers/charts-overview"),
   cloud: () => import("@/io/cloud"),

@@ -1314,6 +1314,11 @@ const regenerateMap = debounce(async function (options) {
   shouldShowLoading && showLoading();
 
   closeDialogs("#worldConfigurator, #options3d");
+  // closeDialogs only reaches legacy jQuery dialogs; the converted React
+  // surfaces must close too, or a stale overview's row actions could mutate
+  // entities of the regenerated world (the same guarded close the .map load
+  // path runs in src/io/load.ts).
+  if (window.lazy?.appShell) await window.lazy.appShell().then(module => module.closeAllSurfaces());
   customization = 0;
   resetZoom(1000);
   undraw();

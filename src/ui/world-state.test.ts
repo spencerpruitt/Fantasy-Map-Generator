@@ -476,6 +476,23 @@ describe("world-state markers-overview reads and mutations", () => {
     unsubscribe();
   });
 
+  it("invert-all writes an EXPLICIT lock boolean on every marker (legacy parity)", () => {
+    worldState.invertAllMarkerLocks();
+
+    const markers = worldState.getMarkers() as unknown as StubMarker[];
+    expect(markers.map(marker => marker.lock)).toEqual([true, true, false]);
+    // The previously-locked shrine keeps a `lock: false` KEY (legacy invert-all
+    // wrote explicit booleans on every marker, so the same user action must
+    // serialize identical .map bytes — the key must not be deleted).
+    expect("lock" in markers[2]).toBe(true);
+    // Every marker carries the explicit key, exactly like the legacy map().
+    expect(markers.every(marker => "lock" in marker)).toBe(true);
+
+    // Guarded: absent world is a no-op, not a throw.
+    globalScope.pack = undefined;
+    expect(() => worldState.invertAllMarkerLocks()).not.toThrow();
+  });
+
   it("finds a marker's note by its element id, or undefined without one", () => {
     expect(worldState.getMarkerNote(0)).toEqual({ id: "marker0", name: "Mount Doom", legend: "An angry volcano" });
     expect(worldState.getMarkerNote(1)).toBeUndefined();

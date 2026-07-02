@@ -150,7 +150,10 @@ function showMapTooltip(point, e, i, g) {
     const r = pack.rivers.find(r => r.i === river);
     const name = r ? r.name + " " + r.type : "";
     tip(name + ". Click to edit");
-    if (riversOverview?.offsetParent) highlightEditorLine(riversOverview, river, 5000);
+    // guarded getElementById: the id now lives on the React Rivers Overview's
+    // table and only exists while the panel is open (a bare `riversOverview`
+    // read would throw ReferenceError when it is closed)
+    if (document.getElementById("riversOverview")?.offsetParent) highlightEditorLine(riversOverview, river, 5000);
     return;
   }
 

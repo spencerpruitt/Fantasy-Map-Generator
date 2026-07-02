@@ -13,6 +13,7 @@ import {
   getMarkerNote,
   getMarkers,
   getMarkerTypes,
+  invertAllMarkerLocks,
   notifyWorldChanged,
   removeMarker,
   setMarkerLock,
@@ -43,6 +44,29 @@ interface MarkerRow {
 /** True for image icons (URL or data URI) the legacy row rendered as an <img>. */
 function isExternalIcon(icon: string): boolean {
   return icon.startsWith("http") || icon.startsWith("data:image");
+}
+
+// The legacy `#addedMarkerType` hidden input was static index.html markup, so
+// the selected add-type outlived the dialog; persist it at module level the
+// same way (ElevationProfile's curve and HeightmapSelection's options do this
+// too) — tools.js' addMarkerOnClick reads the hidden input by id.
+const DEFAULT_ADD_TYPE = { type: "", icon: "❓" };
+let persistedAddType: { type: string; icon: string } = DEFAULT_ADD_TYPE;
+
+// Whether the click-to-add-marker mode was armed when the surface last
+// unmounted. The registry remounts an open surface on re-open (new token), so
+// the unmount cleanup below runs the legacy close side-effects on what legacy
+// treated as a no-op re-open — this record lets the next mount IN THE SAME
+// effects flush re-arm the mode. A real close schedules a microtask that drops
+// the record before any later genuine open can see it (mount effects of a
+// remount run in the same synchronous flush as the unmount cleanup, so they
+// win the race by construction).
+let reArmAddMarkerMode = false;
+
+/** Reset all module-level persisted state. Test isolation hook — nothing in the app calls it. */
+export function resetMarkersOverviewPersistence(): void {
+  persistedAddType = DEFAULT_ADD_TYPE;
+  reArmAddMarkerMode = false;
 }
 
 /**
@@ -85,19 +109,33 @@ export function MarkersOverview({ anchor, onClose }: MarkersOverviewProps) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("up");
-  const [addType, setAddType] = useState({ type: "", icon: "❓" });
+  const [addType, setAddType] = useState(persistedAddType);
   const [typeMenuOpen, setTypeMenuOpen] = useState(false);
   const bulk = useBulkSelection();
 
   // The legacy dialog's close() side-effects: unpress the add-marker buttons
   // and restore default map events, so closing the overview always leaves the
-  // add-marker mode off.
+  // add-marker mode off. On a registry remount (re-open while open) the
+  // cleanup just ran on what legacy treated as a no-op re-open, so the mount
+  // re-arms the add-marker mode through the exact toggle path the button uses.
   useEffect(() => {
+    if (reArmAddMarkerMode) {
+      reArmAddMarkerMode = false;
+      findEl("markersAddFromOverview")?.classList.toggle("pressed");
+      findEl("addMarker")?.click();
+    }
     return () => {
+      reArmAddMarkerMode = findEl("addMarker")?.classList.contains("pressed") ?? false;
       findEl("addMarker")?.classList.remove("pressed");
       findEl("markerAdd")?.classList.remove("pressed");
       if (typeof restoreDefaultEvents === "function") restoreDefaultEvents();
       if (typeof clearMainTip === "function") clearMainTip();
+      // A real close mounts nothing afterwards; drop the record once this
+      // commit's effects have flushed so a LATER genuine open starts with the
+      // add mode off (legacy parity).
+      queueMicrotask(() => {
+        reArmAddMarkerMode = false;
+      });
     };
   }, []);
 
@@ -192,6 +230,7 @@ export function MarkersOverview({ anchor, onClose }: MarkersOverviewProps) {
   }
 
   function handleSelectType(option: { type: string; icon: string }): void {
+    persistedAddType = option;
     setAddType(option);
     // Legacy changeMarkerType: picking a type turns the add mode on if it
     // isn't already.
@@ -222,8 +261,10 @@ export function MarkersOverview({ anchor, onClose }: MarkersOverviewProps) {
     notifyWorldChanged();
   }
 
+  // Invert-all writes an EXPLICIT lock boolean on every marker (legacy parity:
+  // unlike the per-row toggle, which deletes the key) — see invertAllMarkerLocks.
   function handleInvertLock(): void {
-    for (const marker of getMarkers()) setMarkerLock(marker, !marker.lock);
+    invertAllMarkerLocks();
     notifyWorldChanged();
   }
 

@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Marker } from "@/generators/markers-generator";
 import { notifyWorldChanged } from "../world-state";
-import { MarkersOverview } from "./MarkersOverview";
+import { MarkersOverview, resetMarkersOverviewPersistence } from "./MarkersOverview";
 
 const globalScope = globalThis as Record<string, unknown>;
 
@@ -27,6 +27,7 @@ let addMarkerButton: HTMLButtonElement;
 let addMarkerClicks: number;
 
 beforeEach(() => {
+  resetMarkersOverviewPersistence();
   markersData = makeMarkers();
   notesData = [{ id: "marker0", name: "Mount Doom", legend: 'An "angry" volcano' }];
   globalScope.pack = { markers: markersData };
@@ -170,14 +171,21 @@ describe("<MarkersOverview>", () => {
     expect("lock" in (markersData.find(marker => marker.i === 2) as object)).toBe(false);
   });
 
-  it("inverts the lock state for all markers from the header", () => {
+  it("inverts the lock state for all markers, writing EXPLICIT booleans (legacy parity)", () => {
     render(<MarkersOverview onClose={() => {}} />);
 
     fireEvent.click(screen.getByLabelText("Invert lock state for all markers"));
 
-    expect(markersData.find(marker => marker.i === 0)?.lock).toBe(true);
-    expect(markersData.find(marker => marker.i === 1)?.lock).toBe(true);
-    expect("lock" in (markersData.find(marker => marker.i === 2) as object)).toBe(false);
+    // The legacy invert-all replaced pack.markers with mapped copies, so read
+    // the pack — not the stale local array reference.
+    const markers = (globalScope.pack as { markers: Marker[] }).markers;
+    expect(markers.find(marker => marker.i === 0)?.lock).toBe(true);
+    expect(markers.find(marker => marker.i === 1)?.lock).toBe(true);
+    // The previously-locked lighthouse keeps an explicit `lock: false` KEY —
+    // legacy wrote a boolean on EVERY marker, so `.map` bytes stay identical.
+    const lighthouse = markers.find(marker => marker.i === 2) as Marker;
+    expect(lighthouse.lock).toBe(false);
+    expect("lock" in lighthouse).toBe(true);
   });
 
   it("removes a marker (and its map element) after confirmation", () => {
@@ -391,5 +399,77 @@ describe("<MarkersOverview>", () => {
     expect(addMarkerButton.classList.contains("pressed")).toBe(false);
     expect(restoreSpy).toHaveBeenCalledTimes(1);
     expect(clearSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("preserves the selected add-marker type across unmount/remount (legacy static input parity)", () => {
+    const first = render(<MarkersOverview onClose={() => {}} />);
+    fireEvent.click(screen.getByLabelText("Select marker type for newly added markers"));
+    fireEvent.click(screen.getByText("🌋 volcanoes"));
+    expect((first.container.querySelector("#addedMarkerType") as HTMLInputElement).value).toBe("volcanoes");
+    first.unmount();
+
+    // The legacy #addedMarkerType input was static markup that outlived the
+    // dialog, so tools.js' addMarkerOnClick kept reading the chosen type after
+    // a close/re-open; the remounted hidden input must carry it.
+    const second = render(<MarkersOverview onClose={() => {}} />);
+    const hiddenInput = second.container.querySelector("#addedMarkerType") as HTMLInputElement;
+    expect(hiddenInput.value).toBe("volcanoes");
+    expect((second.container.querySelector("#markerTypeSelector") as HTMLElement).textContent).toBe("🌋");
+  });
+
+  // Emulates tools.js' toggleAddMarker/unpressClickToAddButton pressed-state
+  // handling on the fake #addMarker button, so the add-marker mode has a real
+  // on/off signal the surface's mount/unmount logic can observe.
+  function emulateToolsAddMarkerToggle(): void {
+    addMarkerButton.addEventListener("click", () => {
+      const pressed = addMarkerButton.classList.contains("pressed");
+      if (pressed) {
+        addMarkerButton.classList.remove("pressed");
+        document.getElementById("markersAddFromOverview")?.classList.remove("pressed");
+      } else {
+        addMarkerButton.classList.add("pressed");
+        document.getElementById("markersAddFromOverview")?.classList.add("pressed");
+      }
+    });
+  }
+
+  it("re-arms the add-marker mode when the surface remounts while open (re-open is a no-op, legacy parity)", () => {
+    emulateToolsAddMarkerToggle();
+    const first = render(<MarkersOverview onClose={() => {}} />);
+    fireEvent.click(screen.getByLabelText("Add a new marker"));
+    expect(addMarkerButton.classList.contains("pressed")).toBe(true);
+
+    // The registry remounts an open surface on re-open (new token): the old
+    // instance's cleanup and the new instance's mount run in the same effects
+    // flush. Unmount + immediate render reproduces that sequence.
+    first.unmount();
+    render(<MarkersOverview onClose={() => {}} />);
+
+    // Legacy treated re-open as a no-op: the add mode stays armed and both
+    // buttons stay pressed.
+    expect(addMarkerButton.classList.contains("pressed")).toBe(true);
+    expect(screen.getByLabelText("Add a new marker").classList.contains("pressed")).toBe(true);
+  });
+
+  it("exits the add-marker mode on a real close, and a later open stays off (legacy parity)", async () => {
+    emulateToolsAddMarkerToggle();
+    const restoreSpy = vi.fn();
+    globalScope.restoreDefaultEvents = restoreSpy;
+    const view = render(<MarkersOverview onClose={() => {}} />);
+    fireEvent.click(screen.getByLabelText("Add a new marker"));
+    expect(addMarkerButton.classList.contains("pressed")).toBe(true);
+
+    view.unmount();
+
+    // A real close runs the legacy close() side-effects: mode off.
+    expect(addMarkerButton.classList.contains("pressed")).toBe(false);
+    expect(restoreSpy).toHaveBeenCalledTimes(1);
+
+    // No mount followed in the same flush, so the re-arm record is dropped: a
+    // later genuine open must NOT resurrect the add mode.
+    await Promise.resolve(); // let the cleanup's microtask clear the record
+    render(<MarkersOverview onClose={() => {}} />);
+    expect(addMarkerButton.classList.contains("pressed")).toBe(false);
+    expect(screen.getByLabelText("Add a new marker").classList.contains("pressed")).toBe(false);
   });
 });
